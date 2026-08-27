@@ -1,0 +1,6 @@
+{
+  "labImage": "talixman-lab-dispatching:latest",
+  "composeProfile": "core",
+  "composeFile": "/lab/docker-compose.yml",
+  "runtime": "dind"
+}

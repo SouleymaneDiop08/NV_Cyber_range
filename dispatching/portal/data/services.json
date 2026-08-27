@@ -1,0 +1,92 @@
+[
+  {
+    "id": "scada_central",
+    "name": "SCADA Central",
+    "tag": "Supervision Centrale",
+    "desc": "Supervision centralisée de toutes les stations électriques (Station A et Station B)",
+    "icon": "📱",
+    "url": "",
+    "port": 1884,
+    "network": "L3 — 192.168.30.10"
+  },
+  {
+    "id": "scada_station_a",
+    "name": "SCADA Station A",
+    "tag": "Station A — L1",
+    "desc": "Interface de supervision et de contrôle de la Station A",
+    "icon": "📱",
+    "url": "",
+    "port": 1881,
+    "network": "L1 — 192.168.10.20"
+  },
+  {
+    "id": "scada_station_b",
+    "name": "SCADA Station B",
+    "tag": "Station B — L2",
+    "desc": "Interface de supervision et de contrôle de la Station B",
+    "icon": "📱",
+    "url": "",
+    "port": 1882,
+    "network": "L2 — 192.168.20.20"
+  },
+  {
+    "id": "plc_station_a",
+    "name": "PLC Station A",
+    "tag": "Automate — L1",
+    "desc": "Interface web de l'automate OpenPLC de la station A.",
+    "icon": "🤖",
+    "url": "",
+    "port": 8080,
+    "network": "L1 — 192.168.10.10"
+  },
+  {
+    "id": "plc_station_b",
+    "name": "PLC Station B",
+    "tag": "Automate — L2",
+    "desc": "Interface web de l'automate OpenPLC de la station B.",
+    "icon": "🤖",
+    "url": "",
+    "port": 8081,
+    "network": "L2 — 192.168.20.10"
+  },
+  {
+    "id": "ews",
+    "name": "Engineering WS",
+    "tag": "Workstation — L3",
+    "desc": "Station de travail ingénieur pour les Stations électriques",
+    "icon": "💻",
+    "url": "",
+    "port": 6080,
+    "network": "L3 — 192.168.30.20"
+  },
+  {
+    "id": "kali",
+    "name": "Kali Attacker",
+    "tag": "Pentest — L3",
+    "desc": "Machine Kali Linux pour les tests d'intrusion.",
+    "icon": "☠️",
+    "url": "",
+    "port": 6081,
+    "network": "L3 — 192.168.30.30"
+  },
+  {
+    "id": "router_r1",
+    "name": "Routeur R1–R3",
+    "tag": "Infrastructure",
+    "desc": "Interface d'administration du routeur L1/L3.",
+    "icon": "🔀",
+    "url": "",
+    "port": 1444,
+    "network": "L1/L3"
+  },
+  {
+    "id": "router_r2",
+    "name": "Routeur R2–R3",
+    "tag": "Infrastructure",
+    "desc": "Interface d'administration du routeur L2/L3.",
+    "icon": "🔀",
+    "url": "",
+    "port": 1443,
+    "network": "L2/L3"
+  }
+]

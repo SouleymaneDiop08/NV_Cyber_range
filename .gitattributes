@@ -1,0 +1,19 @@
+# Fins de ligne normalisées
+* text=auto eol=lf
+*.sh   text eol=lf
+*.png  binary
+*.jpg  binary
+*.glb  binary
+*.tar  binary
+
+# -----------------------------------------------------------------------------
+# Git LFS — model.dae fait 148 Mo et EST chargé par la vue 3D
+# (viewer3d-station-b/frontend/static/index.html). GitHub refuse tout fichier
+# au-delà de 100 Mo : sans LFS, le push est rejeté.
+#
+# Prérequis avant le premier push :
+#   git lfs install && git lfs track "*.dae"
+# Alternative sans LFS : faire pointer index.html sur model-optimized.glb
+# (8,1 Mo, déjà présent) — c'est une modification fonctionnelle, à tester.
+# -----------------------------------------------------------------------------
+*.dae filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,92 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project xmlns="http://www.plcopen.org/xml/tc6_0201" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:ns1="http://www.plcopen.org/xml/tc6.xsd">
+  <fileHeader companyName="Unknown" productName="Unnamed" productVersion="1" creationDateTime="2025-12-04T12:21:53"/>
+  <contentHeader name="Unnamed" modificationDateTime="2025-12-04T12:27:49">
+    <coordinateInfo>
+      <fbd>
+        <scaling x="10" y="10"/>
+      </fbd>
+      <ld>
+        <scaling x="10" y="10"/>
+      </ld>
+      <sfc>
+        <scaling x="10" y="10"/>
+      </sfc>
+    </coordinateInfo>
+  </contentHeader>
+  <types>
+    <dataTypes/>
+    <pous>
+      <pou name="dispatch" pouType="program">
+        <interface>
+          <localVars>
+            <variable name="Int_Pylone" address="%QX0.0">
+              <type>
+                <BOOL/>
+              </type>
+              <initialValue>
+                <simpleValue value="TRUE"/>
+              </initialValue>
+            </variable>
+            <variable name="Int_Pylone_status" address="%IX0.0">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+            <variable name="Int_transform_A" address="%QX0.1">
+              <type>
+                <BOOL/>
+              </type>
+              <initialValue>
+                <simpleValue value="TRUE"/>
+              </initialValue>
+            </variable>
+            <variable name="Int_transform_A_status" address="%IX0.1">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+            <variable name="Int_transform_B_status" address="%IX0.2">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+            <variable name="Int_transform_AetB_status" address="%IX0.3">
+              <type>
+                <BOOL/>
+              </type>
+            </variable>
+          </localVars>
+        </interface>
+        <body>
+          <ST>
+            <xhtml:p><![CDATA[IF Int_Pylone THEN
+  Int_Pylone_status := TRUE;
+  Int_transform_AetB_status := Int_Pylone_status;
+  Int_transform_A_status := Int_transform_A;
+  Int_transform_B_status := NOT Int_transform_A;
+ 
+ELSE
+  Int_Pylone_status := FALSE;
+  Int_transform_A := FALSE;
+  Int_transform_A_status := FALSE;
+  Int_transform_B_status := FALSE;
+  Int_transform_AetB_status := FALSE;
+END_IF;]]></xhtml:p>
+          </ST>
+        </body>
+      </pou>
+    </pous>
+  </types>
+  <instances>
+    <configurations>
+      <configuration name="Config0">
+        <resource name="Res0">
+          <task name="task0" priority="0" interval="T#20ms">
+            <pouInstance name="instance0" typeName="dispatch"/>
+          </task>
+        </resource>
+      </configuration>
+    </configurations>
+  </instances>
+</project>

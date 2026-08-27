@@ -1,0 +1,311 @@
+@import "tailwindcss";
+
+:root,
+[data-theme="dark"] {
+  --bg: #150d11;
+  --panel: #1e1216;
+  --panel2: #28151a;
+  --panel3: #331a20;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --text: #f5eee9;
+  --text-dim: #b3999f;
+  --text-faint: #7d6870;
+  --orange: #eb640a;
+  --orange-strong: #ff7a1f;
+  --red: #ff6169;
+  --plum: #572438;
+  --success: #3ecf8e;
+  --success-bg: rgba(62, 207, 142, 0.14);
+  --warning: #f0a93c;
+  --warning-bg: rgba(240, 169, 60, 0.14);
+  --danger-bg: rgba(225, 68, 72, 0.14);
+  --info: #5aa9e6;
+  --focus-ring: #ff9c52;
+  --shadow-color: 0deg 0% 0%;
+  --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.4);
+  --shadow-md: 0 6px 16px -4px hsl(var(--shadow-color) / 0.45), 0 2px 6px -2px hsl(var(--shadow-color) / 0.35);
+  --shadow-lg: 0 20px 40px -12px hsl(var(--shadow-color) / 0.55);
+  --overlay: rgba(10, 5, 7, 0.6);
+}
+
+[data-theme="light"] {
+  --bg: #f7f3f1;
+  --panel: #ffffff;
+  --panel2: #f2e9e5;
+  --panel3: #ece0db;
+  --border: rgba(45, 20, 30, 0.1);
+  --border-strong: rgba(45, 20, 30, 0.18);
+  --text: #241119;
+  --text-dim: #6b555f;
+  --text-faint: #8f7a83;
+  --orange: #d9691f;
+  --orange-strong: #c85a17;
+  --red: #c22a2e;
+  --plum: #572438;
+  --success: #1f9d68;
+  --success-bg: rgba(31, 157, 104, 0.12);
+  --warning: #b5760f;
+  --warning-bg: rgba(181, 118, 15, 0.12);
+  --danger-bg: rgba(194, 42, 46, 0.1);
+  --info: #2570b0;
+  --focus-ring: #c85a17;
+  --shadow-color: 20deg 30% 20%;
+  --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.08);
+  --shadow-md: 0 6px 16px -4px hsl(var(--shadow-color) / 0.14), 0 2px 6px -2px hsl(var(--shadow-color) / 0.1);
+  --shadow-lg: 0 20px 40px -12px hsl(var(--shadow-color) / 0.22);
+  --overlay: rgba(40, 20, 26, 0.4);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f7f3f1;
+    --panel: #ffffff;
+    --panel2: #f2e9e5;
+    --panel3: #ece0db;
+    --border: rgba(45, 20, 30, 0.1);
+    --border-strong: rgba(45, 20, 30, 0.18);
+    --text: #241119;
+    --text-dim: #6b555f;
+    --text-faint: #8f7a83;
+    --orange: #d9691f;
+    --orange-strong: #c85a17;
+    --red: #c22a2e;
+    --plum: #572438;
+    --success: #1f9d68;
+    --success-bg: rgba(31, 157, 104, 0.12);
+    --warning: #b5760f;
+    --warning-bg: rgba(181, 118, 15, 0.12);
+    --danger-bg: rgba(194, 42, 46, 0.1);
+    --info: #2570b0;
+    --focus-ring: #c85a17;
+    --shadow-color: 20deg 30% 20%;
+    --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.08);
+    --shadow-md: 0 6px 16px -4px hsl(var(--shadow-color) / 0.14), 0 2px 6px -2px hsl(var(--shadow-color) / 0.1);
+    --shadow-lg: 0 20px 40px -12px hsl(var(--shadow-color) / 0.22);
+    --overlay: rgba(40, 20, 26, 0.4);
+  }
+}
+
+:root {
+  --radius-sm: 7px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 320ms;
+  color-scheme: light dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    ui-sans-serif,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Inter,
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
+}
+
+.font-mono {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--orange) 35%, transparent);
+  color: var(--text);
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 3px solid var(--bg);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint);
+  background-clip: padding-box;
+}
+
+/* Anneau de focus clavier cohérent et visible partout, mais invisible au clic souris
+   (:focus-visible) pour ne pas alourdir l'UI en usage pointeur. */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+}
+
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 12px;
+  z-index: 100;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  transition: top var(--dur-base) var(--ease-out);
+}
+.skip-link:focus-visible {
+  top: 12px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes slideUpIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes shake {
+  10%,
+  90% {
+    transform: translateX(-1px);
+  }
+  20%,
+  80% {
+    transform: translateX(2px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-4px);
+  }
+  40%,
+  60% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--dur-slow) var(--ease-out);
+}
+.animate-scale-in {
+  animation: scaleIn var(--dur-base) var(--ease-out);
+}
+.animate-slide-up {
+  animation: slideUpIn var(--dur-slow) var(--ease-out);
+}
+.animate-toast-in {
+  animation: toastIn var(--dur-base) var(--ease-out);
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--panel2);
+  border-radius: var(--radius-md);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--text) 8%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

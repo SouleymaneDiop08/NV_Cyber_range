@@ -1,0 +1,360 @@
+name: ot_range_v2
+
+# =============================================================================
+# Ce docker-compose.yml s'exécute À L'INTÉRIEUR du conteneur Docker-in-Docker
+# du labo (cf. cyber-range-orchestrator + dispatching/lab-image/). Chaque
+# laboratoire a son propre démon Docker, donc sa propre pile réseau : les
+# réseaux L1/L2/L3 et les IP statiques ci-dessous vivent DANS ce conteneur, et
+# deux labos peuvent utiliser exactement les mêmes adresses sans collision
+# d'IPAM. NE PAS modifier la topologie interne ni les IP statiques —
+# l'orchestration s'adapte au labo, pas l'inverse.
+#
+# Profils (COMPOSE_PROFILES, injecté par l'image de labo ; défaut : core) :
+#   - test : Station A + Station B (+ viewer 3D + reverse_proxy) — jeu d'essai.
+#   - core : test + SCADA central + les deux routeurs (port mirroring gretap
+#            désactivé). Profil de la v1 : le SCADA central est sur L3 et les
+#            PLC sur L1/L2, il lui faut donc les routeurs pour les atteindre.
+#   - full : laboratoire complet (+ EWS, Kali, capteur OT, mirroring gretap).
+#
+# Images : chaque service porte un `image:` explicite en plus de son `build:`.
+# Les images sont buildées une fois hors-ligne (cf. build-images.sh), exportées
+# (`docker save`) et rechargées dans le démon du labo au démarrage
+# (cf. lab-image/entrypoint.sh) — `compose up --no-build`. Le `build:` reste
+# présent pour un build direct de secours / dev.
+# =============================================================================
+
+services:
+  plc_station_a:
+    image: talixman-dispatching-plc-station-a:latest
+    build:
+      context: ./station_a/plc_a/
+      # network: host — le DNS du bridge Docker par défaut est indisponible
+      # AU BUILD dans cet environnement (cf. CLAUDE.md) : sans ça, apt-get
+      # et apk échouent en « DNS: transient error ».
+      network: host
+    profiles: ["test", "core", "full"]
+    cap_add:
+      - NET_ADMIN
+    networks:
+      l1_network:
+        ipv4_address: 192.168.10.10
+
+  scada_station_a:
+    image: talixman-dispatching-scada-station-a:latest
+    build:
+      context: ./station_a/scada_a/
+      # network: host — le DNS du bridge Docker par défaut est indisponible
+      # AU BUILD dans cet environnement (cf. CLAUDE.md) : sans ça, apt-get
+      # et apk échouent en « DNS: transient error ».
+      network: host
+    profiles: ["test", "core", "full"]
+    cap_add:
+      - NET_ADMIN
+    # Dépendance vers router_r1_r3 (profil full uniquement) retirée : Compose
+    # interdit qu'un service actif dépende d'un service exclu par le profil
+    # courant. depends_on ne contrôle que l'ordre de démarrage (pas la
+    # connectivité — FUXA reconnecte le PLC en TCP), donc topologie et IP
+    # statiques restent inchangées.
+    depends_on:
+      - plc_station_a
+    networks:
+      l1_network:
+        ipv4_address: 192.168.10.20
+    environment:
+      # Secret de lancement propre à ce labo (injecté par l'orchestrateur) et
+      # identité du composant : ensemble, ils permettent de vérifier localement
+      # le jeton signé par le portail, sans aucun appel sortant.
+      LAB_SSO_SECRET: "${LAB_SSO_SECRET:-}"
+      LAB_SSO_AUDIENCE: "${LAB_ID:-}:scada-station-a"
+    volumes:
+      - "./station_a/scada_a/appdata:/usr/src/app/FUXA/server/_appdata"
+      - "./station_a/scada_a/appdata:/usr/src/app/FUXA/server/_db"
+      - "./station_a/scada_a/appdata:/usr/src/app/FUXA/server/_images"
+
+  plc_station_b:
+    image: talixman-dispatching-plc-station-b:latest
+    build:
+      context: ./station_b/plc_b/
+      # network: host — le DNS du bridge Docker par défaut est indisponible
+      # AU BUILD dans cet environnement (cf. CLAUDE.md) : sans ça, apt-get
+      # et apk échouent en « DNS: transient error ».
+      network: host
+    profiles: ["test", "core", "full"]
+    cap_add:
+      - NET_ADMIN
+    networks:
+      l2_network:
+        ipv4_address: 192.168.20.10
+
+  scada_station_b:
+    image: talixman-dispatching-scada-station-b:latest
+    build:
+      context: ./station_b/scada_b/
+      # network: host — le DNS du bridge Docker par défaut est indisponible
+      # AU BUILD dans cet environnement (cf. CLAUDE.md) : sans ça, apt-get
+      # et apk échouent en « DNS: transient error ».
+      network: host
+    profiles: ["test", "core", "full"]
+    cap_add:
+      - NET_ADMIN
+    # Idem scada_station_a : dépendance vers router_r2_r3 (full) retirée.
+    depends_on:
+      - plc_station_b
+    networks:
+      l2_network:
+        ipv4_address: 192.168.20.20
+    environment:
+      # Secret de lancement propre à ce labo (injecté par l'orchestrateur) et
+      # identité du composant : ensemble, ils permettent de vérifier localement
+      # le jeton signé par le portail, sans aucun appel sortant.
+      LAB_SSO_SECRET: "${LAB_SSO_SECRET:-}"
+      LAB_SSO_AUDIENCE: "${LAB_ID:-}:scada-station-b"
+    volumes:
+      - "./station_b/scada_b/appdata:/usr/src/app/FUXA/server/_appdata"
+      - "./station_b/scada_b/appdata:/usr/src/app/FUXA/server/_db"
+      - "./station_b/scada_b/appdata:/usr/src/app/FUXA/server/_images"
+
+  viewer3d_station_b:
+    image: talixman-dispatching-viewer3d-station-b:latest
+    build:
+      context: ./viewer3d-station-b/
+      # network: host — le DNS du bridge Docker par défaut est indisponible
+      # AU BUILD dans cet environnement (cf. CLAUDE.md) : sans ça, apt-get
+      # et apk échouent en « DNS: transient error ».
+      network: host
+    profiles: ["test", "core", "full"]
+    restart: unless-stopped
+    depends_on:
+      - plc_station_b
+    networks:
+      l2_network:
+        ipv4_address: 192.168.20.90
+    environment:
+      PLC_HOST: 192.168.20.10
+      PLC_PORT: 502
+    volumes:
+      - "./viewer3d-station-b/frontend/static/assets/extracted/electrical_substation:/app/static/assets/extracted/electrical_substation:ro"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/api/status')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  scada_scentral:
+    image: talixman-dispatching-scada-scentral:latest
+    build:
+      context: ./scada_central/
+      # network: host — le DNS du bridge Docker par défaut est indisponible
+      # AU BUILD dans cet environnement (cf. CLAUDE.md) : sans ça, apt-get
+      # et apk échouent en « DNS: transient error ».
+      network: host
+    profiles: ["core", "full"]
+    cap_add:
+      - NET_ADMIN
+    # depends_on vers les routeurs retiré : même raison que scada_station_a/b —
+    # Compose interdit qu'un service actif dépende d'un service exclu par le
+    # profil courant, et les routeurs ne sont pas dans le profil `test`.
+    # depends_on ne contrôle que l'ordre de démarrage, pas la connectivité :
+    # FUXA reconnecte ses sources en TCP. Le ROUTAGE lui reste indispensable
+    # (ce service est sur L3, les PLC sur L1/L2) — d'où la présence des deux
+    # routeurs dans le profil `core`.
+    networks:
+      l3_network:
+        ipv4_address: 192.168.30.10
+    environment:
+      # Secret de lancement propre à ce labo (injecté par l'orchestrateur) et
+      # identité du composant : ensemble, ils permettent de vérifier localement
+      # le jeton signé par le portail, sans aucun appel sortant.
+      LAB_SSO_SECRET: "${LAB_SSO_SECRET:-}"
+      LAB_SSO_AUDIENCE: "${LAB_ID:-}:scada-scentral"
+    volumes:
+      - "./scada_central/appdata:/usr/src/app/FUXA/server/_appdata"
+      - "./scada_central/appdata:/usr/src/app/FUXA/server/_db"
+      - "./scada_central/appdata:/usr/src/app/FUXA/server/_images"
+
+  ews:
+    image: talixman-dispatching-ews:latest
+    build:
+      context: ./ews/
+      # network: host — le DNS du bridge Docker par défaut est indisponible
+      # AU BUILD dans cet environnement (cf. CLAUDE.md) : sans ça, apt-get
+      # et apk échouent en « DNS: transient error ».
+      network: host
+    profiles: ["full"]
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    networks:
+      l3_network:
+        ipv4_address: 192.168.30.20
+    # Plus de port SSH publié directement sur l'hôte (cf. plan Compose+middleware) —
+    # seul l'accès noVNC via reverse_proxy (port 6080) reste disponible par labo.
+
+  kali_attacker:
+    image: talixman-dispatching-kali-attacker:latest
+    build:
+      context: ./kali-attacker/
+      # network: host — le DNS du bridge Docker par défaut est indisponible
+      # AU BUILD dans cet environnement (cf. CLAUDE.md) : sans ça, apt-get
+      # et apk échouent en « DNS: transient error ».
+      network: host
+    profiles: ["full"]
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    networks:
+      l3_network:
+        ipv4_address: 192.168.30.30
+    sysctls:
+      - net.ipv4.ip_forward=1
+    # Idem ews : plus de port SSH direct, seul le noVNC (6081) via reverse_proxy reste exposé.
+
+  router_r1_r3:
+    image: talixman-dispatching-router-r1-r3:latest
+    build:
+      context: ./router1/
+      # network: host — le DNS du bridge Docker par défaut est indisponible
+      # AU BUILD dans cet environnement (cf. CLAUDE.md) : sans ça, apt-get
+      # et apk échouent en « DNS: transient error ».
+      network: host
+    profiles: ["core", "full"]
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      l1_network:
+        ipv4_address: 192.168.10.254
+      l3_network:
+        ipv4_address: 192.168.30.254
+    environment:
+      # Port mirroring tc+gretap : nécessite les modules noyau ip_gre/gretap
+      # côté HÔTE (le conteneur ne peut pas les charger lui-même). Désactivé
+      # par défaut, activé par l'entrypoint de l'image de labo pour le seul
+      # profil `full`. Le routage L1<->L3 (ip_forward + iptables) reste actif
+      # quelle que soit cette valeur — c'est lui qui compte pour le profil core.
+      HEDGEHOG_ENABLE: "${HEDGEHOG_ENABLE:-false}"
+      HEDGEHOG_LOCAL_IP: 192.168.30.254
+      HEDGEHOG_REMOTE_IP: 192.168.30.50
+      HEDGEHOG_TUNNEL_KEY: "101"
+      HEDGEHOG_TUNNEL_IFACE: gretap_l1
+
+  router_r2_r3:
+    image: talixman-dispatching-router-r2-r3:latest
+    build:
+      context: ./router2/
+      # network: host — le DNS du bridge Docker par défaut est indisponible
+      # AU BUILD dans cet environnement (cf. CLAUDE.md) : sans ça, apt-get
+      # et apk échouent en « DNS: transient error ».
+      network: host
+    profiles: ["core", "full"]
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      l2_network:
+        ipv4_address: 192.168.20.254
+      l3_network:
+        ipv4_address: 192.168.30.253
+    environment:
+      # cf. router_r1_r3 — désactivé hors profil `full`.
+      HEDGEHOG_ENABLE: "${HEDGEHOG_ENABLE:-false}"
+      HEDGEHOG_LOCAL_IP: 192.168.30.253
+      HEDGEHOG_REMOTE_IP: 192.168.30.50
+      HEDGEHOG_TUNNEL_KEY: "102"
+      HEDGEHOG_TUNNEL_IFACE: gretap_l2
+
+  ot_sensor:
+    image: talixman-dispatching-ot-sensor:latest
+    build:
+      context: ./sensor_l3/
+      # network: host — le DNS du bridge Docker par défaut est indisponible
+      # AU BUILD dans cet environnement (cf. CLAUDE.md) : sans ça, apt-get
+      # et apk échouent en « DNS: transient error ».
+      network: host
+    profiles: ["full"]
+    hostname: ot-sensor
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    networks:
+      l3_network:
+        ipv4_address: 192.168.30.50
+    environment:
+      SENSOR_L3_IP: 192.168.30.50
+      SENSOR_BRIDGE: br-mirror
+      L1_REMOTE_IP: 192.168.30.254
+      L1_TUNNEL_KEY: "101"
+      L1_TUNNEL_IFACE: mirror_l1
+      L2_REMOTE_IP: 192.168.30.253
+      L2_TUNNEL_KEY: "102"
+      L2_TUNNEL_IFACE: mirror_l2
+    volumes:
+      - "./sensor_l3/data/suricata:/sensor-logs/suricata"
+      - "./sensor_l3/data/zeek:/sensor-logs/zeek"
+      - "./sensor_l3/data/pcap:/sensor-pcap"
+    restart: unless-stopped
+
+  # Point d'entrée unique du labo. Il publie les ports des composants sur
+  # l'interface réseau de la mini-VM Kata (eth0 de la VM = son interface sur le
+  # réseau partagé talixman-auth_default). Le middleware atteint donc chaque
+  # composant via http://<labId>:<port> (le nom du conteneur-VM résolu par le
+  # DNS Docker du réseau partagé), puis nginx route en interne vers L1/L2/L3.
+  #
+  # depends_on retiré : nginx.conf utilise un resolver + variable `$upstream`
+  # (proxy_pass dynamique) précisément pour démarrer sans que les backends
+  # soient up — et un service actif ne peut pas dépendre de services exclus
+  # par le profil courant (ews/kali/routeurs en profil test).
+  reverse_proxy:
+    image: talixman-dispatching-reverse-proxy:latest
+    build:
+      context: ./reverse-proxy/
+      # network: host — le DNS du bridge Docker par défaut est indisponible
+      # AU BUILD dans cet environnement (cf. CLAUDE.md) : sans ça, apt-get
+      # et apk échouent en « DNS: transient error ».
+      network: host
+    profiles: ["test", "core", "full"]
+    ports:
+      - "8080:8080"
+      - "1881:1881"
+      - "8081:8081"
+      - "1882:1882"
+      - "8090:8090"
+      - "1884:1884"
+      - "6080:6080"
+      - "6081:6081"
+      - "5000:5000"
+      - "1444:1444"
+      - "1443:1443"
+    networks:
+      l1_network:
+        ipv4_address: 192.168.10.90
+      l2_network:
+        ipv4_address: 192.168.20.91
+      l3_network:
+        ipv4_address: 192.168.30.70
+    restart: unless-stopped
+
+
+networks:
+  l1_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.10.0/24
+
+  l2_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.20.0/24
+
+  l3_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.30.0/24

@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title or "GRFICS Router" }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cyber-bg: #0a1628;
+            --cyber-bg-light: #0d1f35;
+            --cyber-bg-card: #0f2847;
+            --cyber-border: #1a4a6e;
+            --cyber-cyan: #00d4ff;
+            --cyber-cyan-dim: #00a8cc;
+            --cyber-green: #00ff88;
+            --cyber-red: #ff3366;
+            --cyber-orange: #ff9500;
+            --cyber-yellow: #ffdd00;
+            --cyber-text: #e0f4ff;
+            --cyber-text-dim: #7aa3c0;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-sans: 'Inter', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--cyber-bg);
+            color: var(--cyber-text);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+        }
+
+        /* Navbar */
+        .navbar-cyber {
+            background: linear-gradient(180deg, var(--cyber-bg-light) 0%, var(--cyber-bg) 100%);
+            border-bottom: 1px solid var(--cyber-border);
+            padding: 0.75rem 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.1);
+        }
+
+        .navbar-cyber .navbar-brand {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--cyber-cyan) !important;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .navbar-cyber .navbar-brand::before {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background: var(--cyber-green);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--cyber-green);
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--cyber-green); }
+            50% { opacity: 0.7; box-shadow: 0 0 20px var(--cyber-green); }
+        }
+
+        .navbar-cyber .nav-link {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--cyber-text-dim) !important;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0.5rem 1rem !important;
+            margin: 0 0.25rem;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-cyber .nav-link:hover {
+            color: var(--cyber-cyan) !important;
+            border-color: var(--cyber-border);
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .navbar-cyber .nav-link.active {
+            color: var(--cyber-cyan) !important;
+            border-color: var(--cyber-cyan);
+            background: rgba(0, 212, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+        }
+
+        .navbar-cyber .navbar-text {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--cyber-green) !important;
+        }
+
+        .navbar-cyber .btn-cyber-outline {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--cyber-cyan);
+            border: 1px solid var(--cyber-cyan);
+            background: transparent;
+            padding: 0.4rem 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-cyber .btn-cyber-outline:hover {
+            background: var(--cyber-cyan);
+            color: var(--cyber-bg);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+
+        /* Container */
+        .container-cyber {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Alerts */
+        .alert-cyber {
+            background: var(--cyber-bg-card);
+            border: 1px solid var(--cyber-border);
+            border-left: 4px solid var(--cyber-cyan);
+            color: var(--cyber-text);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            border-radius: 4px;
+            padding: 1rem 1.25rem;
+        }
+
+        .alert-cyber.alert-warning {
+            border-left-color: var(--cyber-orange);
+            background: rgba(255, 149, 0, 0.1);
+        }
+
+        .alert-cyber.alert-danger {
+            border-left-color: var(--cyber-red);
+            background: rgba(255, 51, 102, 0.1);
+        }
+
+        .alert-cyber.alert-success {
+            border-left-color: var(--cyber-green);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .alert-cyber.alert-info {
+            border-left-color: var(--cyber-cyan);
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        /* Page Title */
+        .page-title {
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--cyber-cyan);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .page-title::before {
+            content: '>';
+            color: var(--cyber-green);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--cyber-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--cyber-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--cyber-cyan-dim);
+        }
+
+        /* Selection */
+        ::selection {
+            background: var(--cyber-cyan);
+            color: var(--cyber-bg);
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-cyber">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">Router 2 (L2-L3)</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" style="border-color: var(--cyber-border);">
+      <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link {% if active_page == 'firewall' %}active{% endif %}" href="{{ url_for('firewall') }}">Firewall</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if active_page == 'ids' %}active{% endif %}" href="{{ url_for('ids') }}">IDS</a>
+        </li>
+        <li class="nav-item">
+         <a class="nav-link {% if active_page == 'logs' %}active{% endif %}" href="{{ url_for('firewall_logs') }}">Firewall Logs</a>
+        </li>
+      </ul>
+      {% if session.get('username') %}
+      <span class="navbar-text me-3">[ {{ session['username'] }}@router ]</span>
+      <a class="btn btn-cyber-outline btn-sm" href="{{ url_for('logout') }}">Logout</a>
+      {% else %}
+      <a class="btn btn-cyber-outline btn-sm" href="{{ url_for('login') }}">Login</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<div class="container-cyber mt-4">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="alert alert-cyber alert-info" role="alert">
+        {{ messages[0] }}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

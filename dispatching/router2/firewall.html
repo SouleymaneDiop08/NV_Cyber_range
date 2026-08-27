@@ -1,0 +1,743 @@
+{% extends "base.html" %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  /* Stats Overview */
+  .stats-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--cyber-bg-card);
+    border: 1px solid var(--cyber-border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+  }
+
+  .stat-card.total::before { background: var(--cyber-cyan); }
+  .stat-card.accept::before { background: var(--cyber-green); }
+  .stat-card.drop::before { background: var(--cyber-red); }
+  .stat-card.reject::before { background: var(--cyber-orange); }
+
+  .stat-number {
+    font-family: var(--font-mono);
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-card.total .stat-number { color: var(--cyber-cyan); }
+  .stat-card.accept .stat-number { color: var(--cyber-green); }
+  .stat-card.drop .stat-number { color: var(--cyber-red); }
+  .stat-card.reject .stat-number { color: var(--cyber-orange); }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--cyber-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Charts Grid */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .chart-card {
+    background: var(--cyber-bg-card);
+    border: 1px solid var(--cyber-border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    position: relative;
+  }
+
+  .chart-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--cyber-cyan), var(--cyber-green));
+    border-radius: 8px 8px 0 0;
+  }
+
+  .chart-title {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--cyber-cyan);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .chart-title::before {
+    content: '>';
+    color: var(--cyber-green);
+  }
+
+  .chart-container {
+    position: relative;
+    height: 180px;
+  }
+
+  /* Cyber Table Styles */
+  .cyber-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--cyber-bg-card);
+    border: 1px solid var(--cyber-border);
+    border-radius: 8px;
+    overflow: visible;
+    margin-bottom: 1.5rem;
+  }
+
+  .cyber-table thead {
+    background: linear-gradient(180deg, var(--cyber-bg-light) 0%, var(--cyber-bg-card) 100%);
+  }
+
+  .cyber-table th {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--cyber-cyan);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--cyber-border);
+    text-align: left;
+  }
+
+  .cyber-table td {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--cyber-text);
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid rgba(26, 74, 110, 0.5);
+    vertical-align: middle;
+  }
+
+  .cyber-table tbody tr {
+    transition: all 0.2s ease;
+  }
+
+  .cyber-table tbody tr:hover {
+    background: rgba(0, 212, 255, 0.05);
+  }
+
+  .cyber-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Interface Header */
+  .interface-header {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--cyber-text);
+    margin: 2rem 0 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--cyber-bg-light);
+    border-left: 3px solid var(--cyber-cyan);
+    border-radius: 0 4px 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .interface-header::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--cyber-green);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--cyber-green);
+  }
+
+  /* Badges */
+  .badge-cyber {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  .badge-cyber.accept {
+    background: rgba(0, 255, 136, 0.15);
+    color: var(--cyber-green);
+    border: 1px solid var(--cyber-green);
+  }
+
+  .badge-cyber.drop, .badge-cyber.reject {
+    background: rgba(255, 51, 102, 0.15);
+    color: var(--cyber-red);
+    border: 1px solid var(--cyber-red);
+  }
+
+  /* Buttons */
+  .btn-cyber-primary {
+    background: linear-gradient(135deg, var(--cyber-cyan) 0%, var(--cyber-cyan-dim) 100%);
+    border: none;
+    border-radius: 4px;
+    color: var(--cyber-bg);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0.625rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-cyber-primary:hover {
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-cyber-success {
+    background: linear-gradient(135deg, var(--cyber-green) 0%, #00cc6a 100%);
+    border: none;
+    border-radius: 4px;
+    color: var(--cyber-bg);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0.625rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-cyber-success:hover {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-cyber-outline {
+    background: transparent;
+    border: 1px solid var(--cyber-border);
+    border-radius: 4px;
+    color: var(--cyber-text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-cyber-outline:hover {
+    border-color: var(--cyber-cyan);
+    color: var(--cyber-cyan);
+  }
+
+  /* Alert Warning */
+  .alert-warning-cyber {
+    background: rgba(255, 149, 0, 0.1);
+    border: 1px solid var(--cyber-orange);
+    border-radius: 6px;
+    color: var(--cyber-orange);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Header Row */
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--cyber-border);
+  }
+
+  /* Modal Styles */
+  .modal-content {
+    background: var(--cyber-bg-card);
+    border: 1px solid var(--cyber-border);
+    border-radius: 8px;
+  }
+
+  .modal-header {
+    background: var(--cyber-bg-light);
+    border-bottom: 1px solid var(--cyber-border);
+    padding: 1.25rem 1.5rem;
+  }
+
+  .modal-title {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--cyber-cyan);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+
+  .modal-footer {
+    background: var(--cyber-bg-light);
+    border-top: 1px solid var(--cyber-border);
+    padding: 1rem 1.5rem;
+  }
+
+  .btn-close {
+    filter: invert(1);
+    opacity: 0.5;
+  }
+
+  .btn-close:hover {
+    opacity: 1;
+  }
+
+  /* Form Controls */
+  .form-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--cyber-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control, .form-select {
+    background: var(--cyber-bg);
+    border: 1px solid var(--cyber-border);
+    border-radius: 4px;
+    color: var(--cyber-text);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    padding: 0.625rem 0.875rem;
+  }
+
+  .form-control:focus, .form-select:focus {
+    background: var(--cyber-bg-light);
+    border-color: var(--cyber-cyan);
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+    color: var(--cyber-text);
+  }
+
+  .form-select option {
+    background: var(--cyber-bg);
+    color: var(--cyber-text);
+  }
+
+  /* Dropdown */
+  .dropdown-menu {
+    background: var(--cyber-bg-card);
+    border: 1px solid var(--cyber-border);
+    border-radius: 6px;
+    padding: 0.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 1050;
+  }
+
+  .dropdown-item {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--cyber-text);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .dropdown-item:hover {
+    background: rgba(0, 212, 255, 0.1);
+    color: var(--cyber-cyan);
+  }
+
+  .dropdown-item.text-danger {
+    color: var(--cyber-red) !important;
+  }
+
+  .dropdown-item.text-danger:hover {
+    background: rgba(255, 51, 102, 0.1);
+  }
+
+  .dropdown-divider {
+    border-color: var(--cyber-border);
+    margin: 0.5rem 0;
+  }
+
+  .btn-group {
+    position: static;
+  }
+
+  .btn-group .btn {
+    background: var(--cyber-bg);
+    border: 1px solid var(--cyber-border);
+    color: var(--cyber-text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+
+  .btn-group .btn:hover {
+    border-color: var(--cyber-cyan);
+    color: var(--cyber-cyan);
+  }
+
+  .cyber-table td {
+    position: relative;
+  }
+
+  .cyber-table .btn-group .dropdown-menu {
+    position: absolute;
+    right: 0;
+    left: auto;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="page-title">Firewall Configuration</h2>
+
+{% if pending_changes %}
+<div class="alert-warning-cyber">
+  <span>You have unsaved changes.</span>
+</div>
+{% endif %}
+
+{% if dirty %}
+  <div class="alert-warning-cyber">
+    <span>You have unsaved changes</span>
+    <form action="/revert" method="POST">
+     <button class="btn-cyber-outline">Revert</button>
+    </form>
+  </div>
+{% endif %}
+
+<!-- Stats Overview -->
+<div class="stats-overview">
+  <div class="stat-card total">
+    <div class="stat-number" id="total-rules">0</div>
+    <div class="stat-label">Total Rules</div>
+  </div>
+  <div class="stat-card accept">
+    <div class="stat-number" id="accept-rules">0</div>
+    <div class="stat-label">Allow Rules</div>
+  </div>
+  <div class="stat-card drop">
+    <div class="stat-number" id="drop-rules">0</div>
+    <div class="stat-label">Block Rules</div>
+  </div>
+  <div class="stat-card reject">
+    <div class="stat-number" id="reject-rules">0</div>
+    <div class="stat-label">Reject Rules</div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="charts-grid">
+  <div class="chart-card">
+    <div class="chart-title">Rules by Action</div>
+    <div class="chart-container">
+      <canvas id="actionChart"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Rules by Interface</div>
+    <div class="chart-container">
+      <canvas id="interfaceChart"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Protocol Distribution</div>
+    <div class="chart-container">
+      <canvas id="protoChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="header-row">
+  <h3 class="page-title" style="margin: 0; font-size: 1.1rem;">Firewall Rules</h3>
+  <div style="display: flex; gap: 0.75rem;">
+    <button class="btn-cyber-primary" data-bs-toggle="modal" data-bs-target="#addRuleModal">
+      + Add Rule
+    </button>
+    <form action="/apply" method="POST" class="m-0">
+      <button class="btn-cyber-success">Apply Changes</button>
+    </form>
+  </div>
+</div>
+
+<!-- Add Rule Modal -->
+<div class="modal fade" id="addRuleModal" tabindex="-1" aria-labelledby="addRuleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form action="/add" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addRuleModalLabel">> Add Firewall Rule</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Incoming Interface</label>
+            <select name="iface_in" class="form-select">
+              {% for ifname, label in labels.items() if label != "Admin" %}
+                <option value="{{ ifname }}">{{ label }} ({{ ifname }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Protocol</label>
+            <select name="proto" class="form-select">
+              <option>tcp</option>
+              <option>udp</option>
+              <option>icmp</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Source</label>
+            <input name="src" class="form-control" placeholder="e.g. 192.168.95.0/24 or any">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Destination</label>
+            <input name="dst" class="form-control" placeholder="e.g. 192.168.90.0/24 or any">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Destination Port (optional)</label>
+            <input name="dport" class="form-control" placeholder="80">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Action</label>
+            <select name="action" class="form-select">
+              <option value="ACCEPT">Allow</option>
+              <option value="DROP">Block</option>
+              <option value="REJECT">Reject</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cyber-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn-cyber-success">Apply Rule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% for iface in ['eth0','eth1'] %}
+  <div class="interface-header">{{ labels.get(iface, iface) }} ({{ iface }})</div>
+  <table class="cyber-table">
+    <thead>
+      <tr><th>#</th><th>Src Address</th><th>Dst Address</th><th>Proto</th><th>Port</th><th>Action</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+    {% for r in rules if r.iface_in == iface %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ r.src }}</td>
+        <td>{{ r.dst }}</td>
+        <td>{{ r.proto }}</td>
+        <td>{{ r.dport }}</td>
+        <td><span class="badge-cyber {{ 'accept' if r.action=='ACCEPT' else 'drop' }}">{{ r.action }}</span></td>
+        <td class="text-center">
+          <div class="btn-group">
+            <button type="button" class="btn btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+              Actions
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li>
+                <form action="/move" method="POST">
+                  <input type="hidden" name="direction" value="up">
+                  <input type="hidden" name="rule_num" value="{{ loop.index0 }}">
+                  <button type="submit" class="dropdown-item">Move Up</button>
+                </form>
+              </li>
+              <li>
+                <form action="/move" method="POST">
+                  <input type="hidden" name="direction" value="down">
+                  <input type="hidden" name="rule_num" value="{{ loop.index0 }}">
+                  <button type="submit" class="dropdown-item">Move Down</button>
+                </form>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <form action="/delete" method="POST" onsubmit="return confirm('Delete this rule?')">
+                  <input type="hidden" name="rule_num" value="{{ loop.index0 }}">
+                  <button type="submit" class="dropdown-item text-danger">Delete</button>
+                </form>
+              </li>
+            </ul>
+          </div>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" style="text-align: center; color: var(--cyber-text-dim);">No rules configured</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+{% endfor %}
+
+<hr style="border-color: var(--cyber-border); margin: 2rem 0;">
+
+<script>
+// Data from server
+const rules = {{ rules | tojson | safe }};
+
+// Calculate statistics
+const actionCounts = { ACCEPT: 0, DROP: 0, REJECT: 0 };
+const interfaceCounts = {};
+const protoCounts = {};
+
+rules.forEach(r => {
+  // Actions
+  if (actionCounts.hasOwnProperty(r.action)) {
+    actionCounts[r.action]++;
+  }
+  
+  // Interfaces
+  const iface = r.iface_in || 'Unknown';
+  interfaceCounts[iface] = (interfaceCounts[iface] || 0) + 1;
+  
+  // Protocols
+  const proto = r.proto || 'any';
+  protoCounts[proto] = (protoCounts[proto] || 0) + 1;
+});
+
+// Update stat cards
+document.getElementById('total-rules').textContent = rules.length;
+document.getElementById('accept-rules').textContent = actionCounts.ACCEPT;
+document.getElementById('drop-rules').textContent = actionCounts.DROP;
+document.getElementById('reject-rules').textContent = actionCounts.REJECT;
+
+// Chart.js default styling
+Chart.defaults.color = '#8ba3b9';
+Chart.defaults.borderColor = 'rgba(26, 74, 110, 0.5)';
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+
+// Action Chart
+new Chart(document.getElementById('actionChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['ACCEPT', 'DROP', 'REJECT'],
+    datasets: [{
+      data: [actionCounts.ACCEPT, actionCounts.DROP, actionCounts.REJECT],
+      backgroundColor: ['#00ff88', '#ff3366', '#ff9500'],
+      borderColor: '#0a1628',
+      borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '60%',
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: { padding: 12, usePointStyle: true, pointStyle: 'circle' }
+      }
+    }
+  }
+});
+
+// Interface Chart
+const interfaceLabels = {
+  'eth0': 'Network-A',
+  'eth1': 'Network-B'
+};
+new Chart(document.getElementById('interfaceChart'), {
+  type: 'bar',
+  data: {
+    labels: Object.keys(interfaceCounts).map(i => interfaceLabels[i] || i),
+    datasets: [{
+      label: 'Rules',
+      data: Object.values(interfaceCounts),
+      backgroundColor: ['#00d4ff', '#00ff88', '#ff9500'],
+      borderRadius: 4,
+      borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: 'rgba(26, 74, 110, 0.3)' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// Protocol Chart
+new Chart(document.getElementById('protoChart'), {
+  type: 'polarArea',
+  data: {
+    labels: Object.keys(protoCounts).map(p => p.toUpperCase()),
+    datasets: [{
+      data: Object.values(protoCounts),
+      backgroundColor: [
+        'rgba(0, 212, 255, 0.7)',
+        'rgba(0, 255, 136, 0.7)',
+        'rgba(255, 149, 0, 0.7)',
+        'rgba(255, 51, 102, 0.7)'
+      ],
+      borderColor: '#0a1628',
+      borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: { padding: 12, usePointStyle: true, pointStyle: 'circle' }
+      }
+    },
+    scales: {
+      r: {
+        grid: { color: 'rgba(26, 74, 110, 0.3)' },
+        ticks: { display: false }
+      }
+    }
+  }
+});
+
+document.querySelectorAll('form[action="/delete"]').forEach(form => {
+  form.addEventListener('submit', e => {
+    if(!confirm('Delete this rule?')) e.preventDefault();
+  });
+});
+</script>
+
+{% endblock %}

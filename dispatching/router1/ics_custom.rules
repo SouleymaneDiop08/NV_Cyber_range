@@ -1,0 +1,37 @@
+# =============================================================================
+# Regles IDS ICS/OT - Zone L1
+# Router R1 - Frontiere entre la zone OT L1 (192.168.10.0/24) et L3 (192.168.30.0/24)
+#
+# Politique retenue pour ce lab:
+# - Autorise: SCADA central (192.168.30.10) -> PLC L1 en Modbus TCP/502
+# - Autorise: EWS (192.168.30.20) -> interface web PLC L1 sur 8080/8081
+# - Interdit / anormal: tout autre acces L3 -> L1 sur ports OT ou admin PLC
+# - Les regles de reconnaissance restent globales: meme un hote autorise ne doit pas scanner la zone OT
+# =============================================================================
+
+# --- RECONNAISSANCE ---
+alert tcp any any -> 192.168.10.0/24 [502,44818,4840,4843,20000,102,2404] (msg:"ICS-RECON-001 Scan SYN vers des ports OT en L1"; flags:S,12; threshold:type both,track by_src,count 5,seconds 10; classtype:network-scan; priority:3; sid:9100001; rev:2;)
+alert icmp any any -> 192.168.10.0/24 any (msg:"ICS-RECON-002 Balayage ICMP de la zone OT L1"; itype:8; threshold:type both,track by_src,count 5,seconds 5; classtype:network-scan; priority:3; sid:9100002; rev:2;)
+alert udp any any -> 192.168.10.0/24 [20000,47808,34980] (msg:"ICS-RECON-003 Sondage UDP sur des ports industriels en L1"; threshold:type both,track by_src,count 5,seconds 10; classtype:network-scan; priority:3; sid:9100003; rev:2;)
+
+# --- MODBUS NON AUTORISE ---
+alert modbus ![192.168.10.0/24,192.168.30.10] any -> 192.168.10.0/24 502 (msg:"ICS-MODBUS-001 Acces Modbus inter-zone non autorise vers un automate L1"; flow:to_server,established; modbus: access read; threshold:type limit,track by_src,count 1,seconds 60; classtype:policy-violation; priority:2; sid:9100010; rev:3;)
+alert modbus ![192.168.10.0/24,192.168.30.10] any -> 192.168.10.0/24 502 (msg:"ICS-MODBUS-002 Rafale d'acces Modbus inter-zone non autorises vers un automate L1"; flow:to_server,established; modbus: access read; threshold:type both,track by_src,count 5,seconds 60; classtype:attempted-recon; priority:1; sid:9100011; rev:2;)
+
+# --- ECRITURES MODBUS NON AUTORISEES ---
+alert modbus ![192.168.10.0/24,192.168.30.10] any -> 192.168.10.0/24 502 (msg:"ICS-MODBUS-WRITE-001 Ecriture Modbus non autorisee vers un automate L1"; flow:to_server,established; modbus: access write; classtype:attempted-admin; priority:1; sid:9100020; rev:3;)
+alert modbus ![192.168.10.0/24,192.168.30.10] any -> 192.168.10.0/24 502 (msg:"ICS-MODBUS-WRITE-002 Ecriture Modbus des coils non autorisee vers L1"; flow:to_server,established; modbus: access write coils; classtype:attempted-admin; priority:1; sid:9100021; rev:3;)
+alert modbus ![192.168.10.0/24,192.168.30.10] any -> 192.168.10.0/24 502 (msg:"ICS-MODBUS-WRITE-003 Ecriture Modbus des holding registers non autorisee vers L1"; flow:to_server,established; modbus: access write holding, registers; classtype:attempted-admin; priority:1; sid:9100022; rev:3;)
+alert modbus ![192.168.10.0/24,192.168.30.10] any -> 192.168.10.0/24 502 (msg:"ICS-MODBUS-WRITE-004 Mise a zero du disjoncteur principal non autorisee vers L1"; flow:to_server,established; modbus: access write coils, address 1, value 0; classtype:attempted-admin; priority:1; sid:9100023; rev:3;)
+alert modbus ![192.168.10.0/24,192.168.30.10] any -> 192.168.10.0/24 502 (msg:"ICS-MODBUS-WRITE-005 Rafale d'ecritures Modbus non autorisees vers L1"; flow:to_server,established; modbus: access write; threshold:type both,track by_src,count 5,seconds 60; classtype:attempted-admin; priority:1; sid:9100024; rev:3;)
+
+# --- PROTOCOLES ICS NON PREVUS DANS CE LAB ---
+alert tcp !192.168.10.0/24 any -> 192.168.10.0/24 44818 (msg:"ICS-PROTOCOL-001 Acces EtherNet/IP non prevu vers L1"; flow:to_server,established; classtype:policy-violation; priority:2; sid:9100030; rev:2;)
+alert tcp !192.168.10.0/24 any -> 192.168.10.0/24 [4840,4843] (msg:"ICS-PROTOCOL-002 Acces OPC-UA non prevu vers L1"; flow:to_server,established; classtype:policy-violation; priority:2; sid:9100031; rev:2;)
+alert tcp !192.168.10.0/24 any -> 192.168.10.0/24 20000 (msg:"ICS-PROTOCOL-003 Acces DNP3 TCP non prevu vers L1"; flow:to_server,established; classtype:policy-violation; priority:2; sid:9100032; rev:2;)
+alert tcp !192.168.10.0/24 any -> 192.168.10.0/24 102 (msg:"ICS-PROTOCOL-004 Acces S7comm non prevu vers L1"; flow:to_server,established; classtype:policy-violation; priority:2; sid:9100033; rev:2;)
+
+# --- INTERFACE D'ADMINISTRATION PLC ---
+alert tcp ![192.168.10.0/24,192.168.30.20] any -> 192.168.10.0/24 [8080,8081] (msg:"ICS-MGMT-001 Acces non autorise a l'interface web d'un automate L1"; flow:to_server,established; classtype:policy-violation; priority:2; sid:9100040; rev:2;)
+alert http ![192.168.10.0/24,192.168.30.20] any -> 192.168.10.0/24 [8080,8081] (msg:"ICS-MGMT-002 Requete POST non autorisee vers l'interface web d'un automate L1"; flow:to_server,established; http.method; content:"POST"; classtype:attempted-admin; priority:1; sid:9100041; rev:2;)
+alert http ![192.168.10.0/24,192.168.30.20] any -> 192.168.10.0/24 [8080,8081] (msg:"ICS-MGMT-003 Tentatives repetees de connexion sur l'interface web d'un automate L1"; flow:to_server,established; http.method; content:"POST"; http.uri; content:"/login"; threshold:type both,track by_src,count 4,seconds 60; classtype:attempted-admin; priority:1; sid:9100042; rev:2;)

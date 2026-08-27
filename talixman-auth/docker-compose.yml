@@ -1,0 +1,78 @@
+name: talixman-auth
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-talixman}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-talixman}
+      POSTGRES_DB: ${POSTGRES_DB:-talixman_auth}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-talixman}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run start:dev"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-talixman}:${POSTGRES_PASSWORD:-talixman}@postgres:5432/${POSTGRES_DB:-talixman_auth}
+      REDIS_URL: redis://redis:6379
+      # cyber-range-orchestrator est un projet Docker Compose séparé (son propre
+      # docker-compose.yml, hors de ce dépôt), mais son rôle `control` s'attache à CE réseau
+      # (`talixman-auth_default`, déclaré external chez lui) : on l'atteint donc par son nom
+      # de conteneur. Surtout PAS par l'hôte : depuis le durcissement, `control` ne publie
+      # aucun port — le port 4100 publié est celui de la `gateway`, qui n'expose que le proxy
+      # public /apps/* et ignore l'API de contrôle.
+      LABS_ORCHESTRATOR_URL: http://cyber_range_orchestrator_control:4100
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles: ["app"]
+
+  # Placeholder — le Dockerfile définitif (build statique + Nginx) arrive en Phase 8.
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host"
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    depends_on:
+      - api
+    profiles: ["app"]
+
+volumes:
+  postgres_data:
+  redis_data:

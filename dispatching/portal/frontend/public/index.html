@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Talixman — Cyber Range Portal</title>
+<link rel="icon" type="image/png" href="./X.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+  /* ===== THEME TOKENS ===== */
+  [data-theme="dark"] {
+    --bg-page: #2e1213;
+    --bg-layer1: #2a0e1a; --bg-layer2: #1f0a0f; --bg-layer3: #150810;
+    --bg-login-right: #12080d;
+    --bg-topbar: rgba(13,5,8,0.92);
+    --bg-card: rgba(0,0,0,0.38);
+    --bg-card-hover: rgba(0,0,0,0.5);
+    --bg-modal: #180d12;
+    --bg-settings: rgba(255,255,255,0.03);
+    --bg-input: rgba(255,255,255,0.04);
+    --bg-card-footer: rgba(0,0,0,0.2);
+    --border-card: rgba(255,255,255,0.07);
+    --border-input: rgba(255,255,255,0.08);
+    --border-topbar: rgba(232,93,26,0.15);
+    --border-divider: rgba(255,255,255,0.07);
+    --border-modal: rgba(232,93,26,0.2);
+    --text-main: #f5f0eb;
+    --text-muted: #8a7a76;
+    --text-light: #d4c5be;
+    --user-pill-bg: rgba(255,255,255,0.05);
+    --user-pill-border: rgba(255,255,255,0.08);
+    --btn-ghost-bg: rgba(255,255,255,0.05);
+    --btn-ghost-border: rgba(255,255,255,0.1);
+    --btn-ghost-color: #d4c5be;
+    --table-border: rgba(255,255,255,0.07);
+    --table-row-hover: rgba(255,255,255,0.02);
+    --role-user-bg: rgba(255,255,255,0.05);
+    --role-user-border: rgba(255,255,255,0.1);
+    --role-user-color: #8a7a76;
+    --select-option-bg: #1a0d12;
+    --grid-color: rgba(232,93,26,0.04);
+    --noise-opacity: 0.025;
+    --theme-icon-content: "☀️";
+  }
+  [data-theme="light"] {
+    --bg-page: #f0e8e5;
+    --bg-layer1: #e8d5d0; --bg-layer2: #eeddd8; --bg-layer3: #f0e5e0;
+    --bg-login-right: #ffffff;
+    --bg-topbar: rgba(248,242,239,0.95);
+    --bg-card: rgba(255,255,255,0.75);
+    --bg-card-hover: rgba(255,255,255,0.95);
+    --bg-modal: #ffffff;
+    --bg-settings: rgba(255,255,255,0.7);
+    --bg-input: rgba(0,0,0,0.04);
+    --bg-card-footer: rgba(0,0,0,0.04);
+    --border-card: rgba(0,0,0,0.09);
+    --border-input: rgba(0,0,0,0.12);
+    --border-topbar: rgba(232,93,26,0.2);
+    --border-divider: rgba(0,0,0,0.1);
+    --border-modal: rgba(232,93,26,0.25);
+    --text-main: #1a0d12;
+    --text-muted: #7a6060;
+    --text-light: #3d2020;
+    --user-pill-bg: rgba(0,0,0,0.05);
+    --user-pill-border: rgba(0,0,0,0.1);
+    --btn-ghost-bg: rgba(0,0,0,0.05);
+    --btn-ghost-border: rgba(0,0,0,0.12);
+    --btn-ghost-color: #3d2020;
+    --table-border: rgba(0,0,0,0.08);
+    --table-row-hover: rgba(0,0,0,0.02);
+    --role-user-bg: rgba(0,0,0,0.05);
+    --role-user-border: rgba(0,0,0,0.1);
+    --role-user-color: #7a6060;
+    --select-option-bg: #ffffff;
+    --grid-color: rgba(232,93,26,0.06);
+    --noise-opacity: 0.01;
+    --theme-icon-content: "🌙";
+  }
+
+  :root {
+    --burgundy: #5c1a2e; --burgundy-dark: #3d1020; --burgundy-light: #7a2340;
+    --orange: #e85d1a; --orange-light: #f07030;
+    --red: #c0392b; --red-mid: #a93226;
+    --cream: #f5f0eb; --smoke: #e8e2da;
+    --dark: #1a0d12; --mid: #2c1520;
+    --text-light: #d4c5be; --text-muted: #8a7a76;
+    --card-bg: rgba(255,255,255,0.04);
+    --card-border: rgba(232,93,26,0.2);
+    --glass: rgba(92,26,46,0.15);
+    --glow-orange: 0 0 30px rgba(232,93,26,0.4);
+    --glow-burgundy: 0 0 30px rgba(92,26,46,0.5);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Exo 2', sans-serif;
+    background: var(--bg-page);
+    color: var(--text-main);
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* =================== BACKGROUND =================== */
+  .bg-layer {
+    position: fixed; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse at 20% 20%, var(--bg-layer1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, var(--bg-layer2) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, var(--bg-layer3) 0%, transparent 70%),
+                var(--bg-page);
+    transition: background 0.3s;
+  }
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(var(--grid-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .bg-noise {
+    position: fixed; inset: 0; z-index: 0;
+    opacity: var(--noise-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px;
+  }
+
+  /* =================== PAGES =================== */
+  .page { position: relative; z-index: 1; display: none; }
+  .page.active { display: flex; }
+
+  /* =================== LOGIN PAGE =================== */
+  #loginPage { min-height: 100vh; align-items: center; justify-content: center; padding: 20px; }
+
+  .login-card {
+    display: flex; width: 900px; max-width: 100%; min-height: 560px;
+    border-radius: 4px; overflow: hidden;
+    box-shadow: 0 2px 2px #e74c3c, 0 0 0 1px rgba(232,93,26,0.15);
+    animation: cardIn 0.8s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(30px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .login-left {
+    flex: 0 0 340px;
+    background: linear-gradient(160deg, var(--burgundy-dark) 0%, var(--burgundy) 50%, var(--red-mid) 100%);
+    padding: 48px 40px; display: flex; flex-direction: column;
+    justify-content: space-between; position: relative; overflow: hidden;
+  }
+  .login-left::before {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(45deg, transparent, transparent 30px, rgba(255,255,255,0.02) 30px, rgba(255,255,255,0.02) 31px);
+  }
+  .login-left::after {
+    content: ''; position: absolute; width: 300px; height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(232,93,26,0.2) 0%, transparent 70%);
+    bottom: -100px; right: -100px;
+  }
+
+  .left-logo img { width: 260px; border-radius: 4px; padding: 8px 12px; }
+  .left-subtitle { position: relative; z-index: 1; }
+  .left-subtitle h2 {
+    font-family: 'Rajdhani', sans-serif; font-size: 2.4rem; font-weight: 700;
+    color: #ffffff; line-height: 1.1; letter-spacing: 0.02em;
+  }
+  .left-subtitle p {
+    margin-top: 10px; font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem; color: rgba(255,255,255,0.5); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .left-tag {
+    position: relative; z-index: 1; font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem; color: rgba(255,255,255,0.35); letter-spacing: 0.15em; text-transform: uppercase;
+  }
+  .left-tag span { color: var(--orange); }
+
+  .login-right {
+    flex: 1; background: var(--bg-login-right); padding: 52px 48px;
+    display: flex; flex-direction: column; justify-content: center;
+    border-left: 1px solid rgba(232,93,26,0.1);
+    transition: background 0.3s;
+  }
+  .login-title {
+    font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 600;
+    letter-spacing: 0.25em; text-transform: uppercase; color: var(--orange); margin-bottom: 8px;
+  }
+  .login-heading {
+    font-family: 'Rajdhani', sans-serif; font-size: 2.2rem; font-weight: 700;
+    color: var(--text-main); margin-bottom: 36px; letter-spacing: 0.02em;
+  }
+  .form-group { margin-bottom: 24px; }
+  .form-label {
+    display: block; font-family: 'Share Tech Mono', monospace; font-size: 1rem;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;
+  }
+  .form-input {
+    width: 100%; background: var(--bg-input); border: 1px solid var(--border-input);
+    border-radius: 2px; padding: 14px 16px; color: var(--text-main);
+    font-family: 'Exo 2', sans-serif; font-size: 1rem; outline: none;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  }
+  .form-input:focus { border-color: var(--orange); background: rgba(232,93,26,0.06); box-shadow: 0 0 0 3px rgba(232,93,26,0.1); }
+  .form-input::placeholder { color: var(--text-muted); opacity: 0.6; }
+
+  .btn-primary {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, var(--orange), var(--red));
+    border: none; border-radius: 2px; color: #fff;
+    font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 700;
+    letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer;
+    transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .btn-primary::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .btn-primary:hover::before { opacity: 1; }
+  .btn-primary:hover { box-shadow: var(--glow-orange); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .login-error {
+    background: rgba(192,57,43,0.15); border: 1px solid rgba(192,57,43,0.4);
+    border-radius: 2px; padding: 12px 16px; color: #e74c3c;
+    font-size: 0.85rem; margin-top: 16px; display: none;
+    font-family: 'Share Tech Mono', monospace; letter-spacing: 0.05em;
+  }
+  .login-error.show { display: block; animation: shake 0.3s ease; }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+  /* =================== PORTAL PAGE =================== */
+  #portalPage { flex-direction: column; min-height: 100vh; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg-topbar); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-topbar);
+    padding: 0 40px; height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    animation: slideDown 0.5s ease both; transition: background 0.3s;
+  }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+  .topbar-left { display: flex; align-items: center; gap: 20px; }
+  .topbar-logo { height: 40px;border-radius: 3px; padding: 3px 6px; }
+  .topbar-divider { width: 1px; height: 24px; background: rgba(232,93,26,0.3); }
+  .topbar-title { font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; color: var(--orange); letter-spacing: 0.2em; text-transform: uppercase; }
+
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .user-pill {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--user-pill-bg); border: 1px solid var(--user-pill-border);
+    border-radius: 100px; padding: 6px 16px 6px 8px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .user-pill:hover { border-color: rgba(232,93,26,0.4); background: rgba(232,93,26,0.08); }
+  .user-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--orange), var(--burgundy));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Rajdhani', sans-serif; font-size: 0.85rem; font-weight: 700; color: #fff;
+  }
+  .user-name { font-family: 'Exo 2', sans-serif; font-size: 0.85rem; color: var(--text-main); }
+
+  .topbar-nav { display: flex; gap: 4px; }
+  .nav-btn {
+    background: none; border: none; cursor: pointer; padding: 8px 14px;
+    border-radius: 2px; font-family: 'Rajdhani', sans-serif; font-size: 0.9rem;
+    font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-muted); transition: all 0.2s;
+  }
+  .nav-btn:hover { color: var(--orange); background: rgba(232,93,26,0.08); }
+  .nav-btn.active { color: var(--orange); }
+  .nav-btn.danger { color: var(--red); }
+  .nav-btn.danger:hover { background: rgba(192,57,43,0.1); }
+
+  /* Theme toggle button */
+  .theme-btn {
+    background: var(--user-pill-bg); border: 1px solid var(--user-pill-border);
+    border-radius: 20px; padding: 5px 12px; cursor: pointer;
+    font-size: 1rem; transition: all 0.2s; color: var(--text-muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .theme-btn:hover { border-color: rgba(232,93,26,0.4); background: rgba(232,93,26,0.08); }
+  .theme-btn-label { font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* Portal content */
+  .portal-content { flex: 1; padding: 40px; animation: fadeInUp 0.6s ease both; animation-delay: 0.1s; }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  .section { display: none; }
+  .section.active { display: block; }
+  .section-header { margin-bottom: 32px; }
+  .section-label { font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--orange); margin-bottom: 6px; }
+  .section-title { font-family: 'Rajdhani', sans-serif; font-size: 2rem; font-weight: 700; color: var(--text-main); letter-spacing: 0.02em; }
+
+  /* =================== SERVICES GRID =================== */
+  .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+
+  .service-card {
+    background: var(--bg-card); border: 1px solid var(--border-card);
+    border-radius: 3px; padding: 0; cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+    overflow: hidden; text-decoration: none; display: block;
+    position: relative; animation: cardReveal 0.5s ease both; color: var(--text-main);
+  }
+  .service-card:nth-child(1){animation-delay:.05s} .service-card:nth-child(2){animation-delay:.1s}
+  .service-card:nth-child(3){animation-delay:.15s} .service-card:nth-child(4){animation-delay:.2s}
+  .service-card:nth-child(5){animation-delay:.25s} .service-card:nth-child(6){animation-delay:.3s}
+  .service-card:nth-child(7){animation-delay:.35s}
+  @keyframes cardReveal { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+  .service-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(232,93,26,0.08), transparent);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .service-card:hover {
+    border-color: rgba(232,93,26,0.45); transform: translateY(-4px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(232,93,26,0.15), var(--glow-orange);
+    background: var(--bg-card-hover);
+  }
+  .service-card:hover::before { opacity: 1; }
+
+  .card-accent { height: 3px; background: linear-gradient(90deg, var(--burgundy), var(--orange), var(--red)); transition: height 0.2s; }
+  .service-card:hover .card-accent { height: 4px; }
+
+  .card-body { padding: 28px 28px 24px; }
+  .card-icon { font-size: 2.2rem; margin-bottom: 16px; filter: drop-shadow(0 0 8px rgba(232,93,26,0.3)); transition: transform 0.2s, filter 0.2s; }
+  .service-card:hover .card-icon { transform: scale(1.1); filter: drop-shadow(0 0 16px rgba(232,93,26,0.6)); }
+  .card-name { font-family: 'Rajdhani', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px; letter-spacing: 0.05em; }
+  .card-tag { font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--orange); margin-bottom: 12px; }
+  .card-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+  .card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 28px; border-top: 1px solid var(--border-card); background: var(--bg-card-footer);
+  }
+  .card-port { font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.1em; }
+  .card-arrow { font-size: 1rem; color: var(--orange); opacity: 0; transform: translateX(-8px); transition: all 0.2s; }
+  .service-card:hover .card-arrow { opacity: 1; transform: translateX(0); }
+
+  /* Superadmin card action buttons */
+  .card-actions {
+    position: absolute; top: 8px; right: 8px;
+    display: flex; gap: 4px; z-index: 5;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .service-card:hover .card-actions { opacity: 1; }
+  .card-act-btn {
+    border: none; border-radius: 2px; cursor: pointer;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
+    letter-spacing: 0.08em; padding: 4px 8px; color: #fff;
+    transition: all 0.15s;
+  }
+  .card-act-edit { background: rgba(232,93,26,0.85); }
+  .card-act-edit:hover { background: var(--orange); }
+  .card-act-del { background: rgba(192,57,43,0.85); }
+  .card-act-del:hover { background: var(--red); }
+
+  /* Add card */
+  .add-card {
+    background: transparent; border: 2px dashed rgba(232,93,26,0.3);
+    border-radius: 3px; min-height: 200px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; color: var(--text-muted); transition: all 0.2s;
+    font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 600; letter-spacing: 0.1em;
+  }
+  .add-card:hover { border-color: var(--orange); color: var(--orange); background: rgba(232,93,26,0.04); transform: translateY(-2px); }
+  .add-card-icon { font-size: 2rem; }
+
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #2ecc71; box-shadow: 0 0 6px rgba(46,204,113,0.6); display: inline-block; animation: pulse-dot 2s infinite; }
+  @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* =================== SETTINGS / ADMIN =================== */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 900px; }
+  .settings-card { background: var(--bg-settings); border: 1px solid var(--border-card); border-radius: 3px; padding: 28px; transition: background 0.3s; }
+  .settings-card-title {
+    font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 700;
+    color: var(--text-main); margin-bottom: 20px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-divider); letter-spacing: 0.05em;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .form-group-sm { margin-bottom: 16px; }
+  .form-label-sm { display: block; font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .form-input-sm {
+    width: 100%; background: var(--bg-input); border: 1px solid var(--border-input);
+    border-radius: 2px; padding: 10px 12px; color: var(--text-main);
+    font-family: 'Exo 2', sans-serif; font-size: 0.9rem; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .form-input-sm:focus { border-color: var(--orange); box-shadow: 0 0 0 2px rgba(232,93,26,0.1); }
+  .form-input-sm::placeholder { color: var(--text-muted); opacity: 0.6; }
+  .form-select {
+    width: 100%; background: var(--bg-input); border: 1px solid var(--border-input);
+    border-radius: 2px; padding: 10px 12px; color: var(--text-main);
+    font-family: 'Exo 2', sans-serif; font-size: 0.9rem; outline: none;
+    cursor: pointer; appearance: none; transition: border-color 0.2s;
+  }
+  .form-select:focus { border-color: var(--orange); }
+  .form-select option { background: var(--select-option-bg); }
+
+  .btn-sm { padding: 9px 20px; border: none; border-radius: 2px; cursor: pointer; font-family: 'Rajdhani', sans-serif; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; transition: all 0.2s; }
+  .btn-orange { background: linear-gradient(135deg, var(--orange), var(--red)); color: #fff; }
+  .btn-orange:hover { box-shadow: 0 4px 20px rgba(232,93,26,0.4); transform: translateY(-1px); }
+  .btn-ghost { background: var(--btn-ghost-bg); border: 1px solid var(--btn-ghost-border); color: var(--btn-ghost-color); }
+  .btn-ghost:hover { background: rgba(232,93,26,0.08); }
+  .btn-danger { background: rgba(192,57,43,0.15); border: 1px solid rgba(192,57,43,0.3); color: #e74c3c; }
+  .btn-danger:hover { background: rgba(192,57,43,0.25); }
+
+  .users-table-wrap { overflow-x: auto; }
+  .users-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .users-table th { text-align: left; padding: 10px 12px; font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--table-border); }
+  .users-table td { padding: 12px 12px; border-bottom: 1px solid var(--table-border); color: var(--text-light); vertical-align: middle; }
+  .users-table tr:hover td { background: var(--table-row-hover); }
+
+  .role-badge { display: inline-block; padding: 2px 10px; border-radius: 100px; font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; }
+  .role-admin { background: rgba(232,93,26,0.15); color: var(--orange); border: 1px solid rgba(232,93,26,0.3); }
+  .role-user  { background: var(--role-user-bg); color: var(--role-user-color); border: 1px solid var(--role-user-border); }
+  .role-superadmin { background: rgba(92,26,46,0.2); color: #c77dff; border: 1px solid rgba(150,60,200,0.35); }
+
+  .alert { padding: 12px 16px; border-radius: 2px; margin-bottom: 16px; font-size: 0.85rem; font-family: 'Share Tech Mono', monospace; display: none; }
+  .alert.show { display: block; }
+  .alert-success { background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.3); color: #2ecc71; }
+  .alert-error { background: rgba(192,57,43,0.1); border: 1px solid rgba(192,57,43,0.3); color: #e74c3c; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--bg-modal); border: 1px solid var(--border-modal); border-radius: 4px; padding: 32px; width: 500px; max-width: 95vw; max-height: 90vh; overflow-y: auto; animation: modalIn 0.3s cubic-bezier(0.16,1,0.3,1) both; transition: background 0.3s; }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .modal-title { font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--text-main); margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 24px; justify-content: flex-end; }
+
+  /* Icon picker */
+  .icon-picker { position: relative; }
+  .icon-trigger {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg-input); border: 1px solid var(--border-input);
+    border-radius: 2px; padding: 10px 12px; cursor: pointer;
+    transition: border-color 0.2s; user-select: none;
+  }
+  .icon-trigger:hover { border-color: var(--orange); }
+  .icon-trigger-preview { font-size: 1.6rem; line-height: 1; }
+  .icon-trigger-text { font-family: 'Exo 2', sans-serif; font-size: 0.85rem; color: var(--text-muted); }
+  .icon-dropdown {
+    display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+    background: var(--bg-modal); border: 1px solid var(--border-modal);
+    border-radius: 3px; padding: 12px; z-index: 400;
+    max-height: 280px; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .icon-dropdown.open { display: block; }
+  .icon-search {
+    width: 100%; padding: 8px 10px; background: var(--bg-input);
+    border: 1px solid var(--border-input); border-radius: 2px;
+    color: var(--text-main); font-size: 0.85rem; outline: none; margin-bottom: 10px;
+  }
+  .icon-search:focus { border-color: var(--orange); }
+  .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 3px; }
+  .icon-item {
+    font-size: 1.5rem; text-align: center; padding: 6px 4px;
+    border-radius: 3px; cursor: pointer; transition: background 0.15s;
+    line-height: 1;
+  }
+  .icon-item:hover { background: rgba(232,93,26,0.15); }
+  .icon-item.sel { background: rgba(232,93,26,0.25); outline: 2px solid var(--orange); }
+
+  @media (max-width: 700px) {
+    .login-left { display: none; }
+    .login-right { padding: 36px 24px; }
+    .topbar { padding: 0 16px; }
+    .portal-content { padding: 24px 16px; }
+    .settings-grid { grid-template-columns: 1fr; }
+    .topbar-title { display: none; }
+    .theme-btn-label { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-layer"></div>
+<div class="bg-grid"></div>
+<div class="bg-noise"></div>
+
+<!-- =================== LOGIN PAGE =================== -->
+<div id="loginPage" class="page active">
+  <div class="login-card">
+    <div class="login-left">
+      <div class="left-logo">
+        <img src="./talixmanlogo.png" />
+        <div style="display:none;font-family:'Rajdhani',sans-serif;font-size:2rem;font-weight:700;color:#fff;letter-spacing:0.05em;">TALI<span style="color:var(--orange)">X</span>MAN</div>
+      </div>
+      <div class="left-subtitle">
+        <h2>Power Grid<br/>Cyber Range</h2>
+        <p>Secure Industrial Lab Portal</p>
+      </div>
+      <div class="left-tag">ICSHUB <span>//</span> v1.0</div>
+    </div>
+    <div class="login-right">
+      <div class="login-title">Authentification</div>
+      <div class="login-heading">Connexion</div>
+      <div class="form-group">
+        <label class="form-label" for="username">Identifiant</label>
+        <input class="form-input" id="username" type="text" placeholder="Entrez votre username" autocomplete="username"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Mot de passe</label>
+        <input class="form-input" id="password" type="password" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+      <button class="btn-primary" id="loginBtn" onclick="doLogin()">Accéder au portail</button>
+      <div class="login-error" id="loginError"></div>
+    </div>
+  </div>
+</div>
+
+<!-- =================== PORTAL PAGE =================== -->
+<div id="portalPage" class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <img class="topbar-logo" src="./talixmanlogo.png" alt="Talixman" onerror="this.style.display='none'"/>
+      <div class="topbar-divider"></div>
+      <div class="topbar-title">Cyber Range Portal</div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-nav">
+        <button class="nav-btn active" id="navPortal" onclick="showSection('portal')">⬡ Portail</button>
+        <button class="nav-btn" id="navSettings" onclick="showSection('settings')">⚙ Paramètres</button>
+        <button class="nav-btn" id="navAdmin" onclick="showSection('admin')" style="display:none">👥 Utilisateurs</button>
+      </div>
+      <button class="theme-btn" onclick="toggleTheme()" title="Changer le thème">
+        <span id="themeEmoji">☀️</span>
+        <span class="theme-btn-label" id="themeLabel">Clair</span>
+      </button>
+      <div class="user-pill" onclick="showSection('settings')">
+        <div class="user-avatar" id="userAvatar">A</div>
+        <span class="user-name" id="userNameDisplay">admin</span>
+      </div>
+      <button class="nav-btn danger" onclick="doLogout()">⏻ Déconnexion</button>
+    </div>
+  </div>
+
+  <div class="portal-content">
+
+    <!-- PORTAL SECTION -->
+    <div id="sectionPortal" class="section active">
+      <div class="section-header">
+        <div class="section-label">// Accès rapide</div>
+        <div class="section-title">Interfaces des Services</div>
+      </div>
+      <div class="services-grid" id="servicesGrid"></div>
+    </div>
+
+    <!-- SETTINGS SECTION -->
+    <div id="sectionSettings" class="section">
+      <div class="section-header">
+        <div class="section-label">// Mon compte</div>
+        <div class="section-title">Paramètres</div>
+      </div>
+      <div class="settings-grid">
+        <div class="settings-card">
+          <div class="settings-card-title">✏ Modifier mes identifiants</div>
+          <div id="settingsAlert" class="alert"></div>
+          <div class="form-group-sm">
+            <label class="form-label-sm">Nouveau username</label>
+            <input class="form-input-sm" id="newUsername" type="text" placeholder="Laisser vide = inchangé"/>
+          </div>
+          <div class="form-group-sm">
+            <label class="form-label-sm">Nouveau mot de passe</label>
+            <input class="form-input-sm" id="newPassword" type="password" placeholder="Laisser vide = inchangé"/>
+          </div>
+          <div class="form-group-sm">
+            <label class="form-label-sm">Confirmer le mot de passe</label>
+            <input class="form-input-sm" id="confirmPassword" type="password" placeholder="••••••••"/>
+          </div>
+          <div class="form-group-sm">
+            <label class="form-label-sm">Nom d'affichage</label>
+            <input class="form-input-sm" id="newDisplayName" type="text" placeholder="Votre nom affiché"/>
+          </div>
+          <button class="btn-sm btn-orange" onclick="saveProfile()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN SECTION -->
+    <div id="sectionAdmin" class="section">
+      <div class="section-header">
+        <div class="section-label">// Administration</div>
+        <div class="section-title">Gestion des Utilisateurs</div>
+      </div>
+      <div class="settings-grid" style="max-width:1100px; grid-template-columns: 1fr 340px;">
+        <div class="settings-card">
+          <div class="settings-card-title">👥 Utilisateurs enregistrés</div>
+          <div id="adminAlert" class="alert"></div>
+          <div class="users-table-wrap">
+            <table class="users-table">
+              <thead><tr><th>Username</th><th>Nom affiché</th><th>Rôle</th><th>Actions</th></tr></thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="settings-card">
+          <div class="settings-card-title">➕ Ajouter un utilisateur</div>
+          <div id="addUserAlert" class="alert"></div>
+          <div class="form-group-sm">
+            <label class="form-label-sm">Username *</label>
+            <input class="form-input-sm" id="addUsername" type="text" placeholder="username"/>
+          </div>
+          <div class="form-group-sm">
+            <label class="form-label-sm">Nom d'affichage</label>
+            <input class="form-input-sm" id="addDisplayName" type="text" placeholder="Prénom Nom"/>
+          </div>
+          <div class="form-group-sm">
+            <label class="form-label-sm">Mot de passe *</label>
+            <input class="form-input-sm" id="addPassword" type="password" placeholder="••••••••"/>
+          </div>
+          <div class="form-group-sm">
+            <label class="form-label-sm">Rôle</label>
+            <select class="form-select" id="addRole">
+              <option value="user">Utilisateur</option>
+              <option value="admin">Administrateur</option>
+              <option value="superadmin">Super Administrateur</option>
+            </select>
+          </div>
+          <button class="btn-sm btn-orange" onclick="addUser()">Créer l'utilisateur</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">✏ Modifier l'utilisateur</div>
+    <input type="hidden" id="editUserId"/>
+    <div id="editModalAlert" class="alert"></div>
+    <div class="form-group-sm">
+      <label class="form-label-sm">Username</label>
+      <input class="form-input-sm" id="editUsername" type="text"/>
+    </div>
+    <div class="form-group-sm">
+      <label class="form-label-sm">Nom d'affichage</label>
+      <input class="form-input-sm" id="editDisplayName" type="text"/>
+    </div>
+    <div class="form-group-sm">
+      <label class="form-label-sm">Nouveau mot de passe (vide = inchangé)</label>
+      <input class="form-input-sm" id="editPassword" type="password" placeholder="••••••••"/>
+    </div>
+    <div class="form-group-sm">
+      <label class="form-label-sm">Rôle</label>
+      <select class="form-select" id="editRole">
+        <option value="user">Utilisateur</option>
+        <option value="admin">Administrateur</option>
+        <option value="superadmin">Super Administrateur</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-sm btn-ghost" onclick="closeModal('editModal')">Annuler</button>
+      <button class="btn-sm btn-orange" onclick="saveEditUser()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Service Modal (superadmin) -->
+<div class="modal-overlay" id="serviceModal">
+  <div class="modal">
+    <div class="modal-title" id="svcModalTitle">➕ Ajouter une interface</div>
+    <input type="hidden" id="svcModalId"/>
+    <div id="svcModalAlert" class="alert"></div>
+    <div class="form-group-sm">
+      <label class="form-label-sm">Titre *</label>
+      <input class="form-input-sm" id="svcName" type="text" placeholder="Ex : SCADA Central"/>
+    </div>
+    <div class="form-group-sm">
+      <label class="form-label-sm">Tag / Sous-titre</label>
+      <input class="form-input-sm" id="svcTag" type="text" placeholder="Ex : Supervision Centrale"/>
+    </div>
+    <div class="form-group-sm">
+      <label class="form-label-sm">Description</label>
+      <input class="form-input-sm" id="svcDesc" type="text" placeholder="Brève description du service"/>
+    </div>
+    <div class="form-group-sm">
+      <label class="form-label-sm">URL complète * <small style="opacity:.6;text-transform:none">(ou hostname:port/chemin)</small></label>
+      <input class="form-input-sm" id="svcUrl" type="text" placeholder="http://192.168.10.20:1881/ ou :8080/"/>
+    </div>
+    <div class="form-group-sm">
+      <label class="form-label-sm">Info réseau</label>
+      <input class="form-input-sm" id="svcNetwork" type="text" placeholder="Ex : L3 — 192.168.30.10"/>
+    </div>
+    <div class="form-group-sm">
+      <label class="form-label-sm">Port affiché</label>
+      <input class="form-input-sm" id="svcPort" type="number" placeholder="Ex : 1884"/>
+    </div>
+    <div class="form-group-sm">
+      <label class="form-label-sm">Icône</label>
+      <div class="icon-picker" id="iconPicker">
+        <div class="icon-trigger" onclick="toggleIconDropdown()">
+          <span class="icon-trigger-preview" id="iconPreview">📱</span>
+          <span class="icon-trigger-text">Cliquez pour choisir une icône</span>
+        </div>
+        <div class="icon-dropdown" id="iconDropdown">
+          <input class="icon-search" type="text" placeholder="🔍 Rechercher une icône..." oninput="filterIcons(this.value)" id="iconSearchInput"/>
+          <div class="icon-grid" id="iconGrid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-sm btn-ghost" onclick="closeModal('serviceModal')">Annuler</button>
+      <button class="btn-sm btn-orange" onclick="saveService()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =================== ICON LIBRARY (60 IT/OT icons) ===================
+const ICONS = [
+  {e:'📱',n:'tablette scada supervision hmi'},
+  {e:'🖥',n:'ecran moniteur desktop pc'},
+  {e:'💻',n:'laptop ordinateur portable ews'},
+  {e:'🖨',n:'imprimante printer'},
+  {e:'⌨️',n:'clavier terminal bash shell commande'},
+  {e:'🖱',n:'souris mouse'},
+  {e:'🤖',n:'robot automate plc api'},
+  {e:'🔀',n:'switch routeur reseau infrastructure'},
+  {e:'🌐',n:'internet reseau global wan'},
+  {e:'📡',n:'antenne satellite radio wan'},
+  {e:'🔌',n:'cable prise electrique ethernet'},
+  {e:'📶',n:'wifi signal sans fil'},
+  {e:'🛜',n:'wifi wireless'},
+  {e:'🔗',n:'lien connexion link'},
+  {e:'🔒',n:'cadenas securite verrouille locked'},
+  {e:'🔓',n:'cadenas ouvert unlocked'},
+  {e:'🛡',n:'bouclier protection defense firewall'},
+  {e:'☠️',n:'tete mort danger kali pentest attaque'},
+  {e:'⚠️',n:'attention alerte warning'},
+  {e:'🚨',n:'sirene alerte urgence alarm'},
+  {e:'🔐',n:'cle cadenas auth authentification'},
+  {e:'🕵',n:'detective investigation audit ids'},
+  {e:'🧱',n:'firewall mur pare-feu'},
+  {e:'🔑',n:'cle password acces'},
+  {e:'⚙️',n:'engrenage parametre configuration'},
+  {e:'🔧',n:'outil ingenierie maintenance'},
+  {e:'🔩',n:'vis boulon mecanique'},
+  {e:'🏭',n:'usine industrie production ics'},
+  {e:'⚡',n:'eclair electricite energie power grid'},
+  {e:'🔋',n:'batterie energie stockage'},
+  {e:'💡',n:'ampoule idee lumiere'},
+  {e:'🌡',n:'thermometre temperature capteur sensor'},
+  {e:'🧲',n:'aimant magnetique'},
+  {e:'🎛',n:'tableau bord control hmi ihm'},
+  {e:'🕹',n:'joystick controleur'},
+  {e:'💾',n:'disquette sauvegarde backup stockage'},
+  {e:'🗄',n:'serveur rack base donnees database'},
+  {e:'📊',n:'graphique analyse donnees monitoring'},
+  {e:'📈',n:'courbe hausse trend'},
+  {e:'📉',n:'courbe baisse'},
+  {e:'📋',n:'clipboard rapport logs journal'},
+  {e:'📁',n:'dossier fichiers folder'},
+  {e:'📦',n:'paquet container docker'},
+  {e:'🚀',n:'deploiement lancement launch'},
+  {e:'🧪',n:'test laboratoire experimentation'},
+  {e:'🔭',n:'telescope surveillance monitoring siem'},
+  {e:'🔍',n:'loupe recherche analyse ids detection'},
+  {e:'📧',n:'email mail message'},
+  {e:'🔔',n:'notification alarme alerte'},
+  {e:'🔕',n:'silencieux muet'},
+  {e:'🗺',n:'carte reseau topology'},
+  {e:'⏱',n:'chronometre temps latence'},
+  {e:'🔄',n:'synchronisation rafraichissement'},
+  {e:'✅',n:'valide succes ok'},
+  {e:'❌',n:'erreur echec'},
+  {e:'⛔',n:'interdit bloque acces'},
+  {e:'🧰',n:'boite outils devops sysadmin'},
+  {e:'🧩',n:'plugin module integration'},
+  {e:'☢️',n:'nucleaire radioactif'},
+  {e:'🔥',n:'feu chaleur temperature'},
+  {e:'💬',n:'log message chat'},
+  {e:'🏷',n:'etiquette tag label'},
+  {e:'📌',n:'fixe important epingle'},
+  {e:'🌊',n:'eau fluide hydraulique'},
+  {e:'☀️',n:'solaire energie renouvelable'},
+  {e:'❄️',n:'froid refroidissement cooling'},
+  {e:'💨',n:'vent air ventilation'},
+  {e:'📟',n:'pager terminal ot scada'},
+  {e:'🎯',n:'cible objectif target'},
+  {e:'🧭',n:'boussole navigation'},
+];
+
+let currentIcon = '📱';
+
+function renderIconGrid(filter=''){
+  const f = filter.toLowerCase();
+  const filtered = f ? ICONS.filter(i => i.n.includes(f) || i.e.includes(f)) : ICONS;
+  document.getElementById('iconGrid').innerHTML = filtered.map(i =>
+    `<div class="icon-item${currentIcon===i.e?' sel':''}" title="${i.n}" onclick="pickIcon('${i.e}')">${i.e}</div>`
+  ).join('');
+}
+
+function pickIcon(e){
+  currentIcon = e;
+  document.getElementById('iconPreview').textContent = e;
+  renderIconGrid(document.getElementById('iconSearchInput').value);
+}
+
+function filterIcons(v){ renderIconGrid(v); }
+
+function toggleIconDropdown(){
+  const dd = document.getElementById('iconDropdown');
+  dd.classList.toggle('open');
+  if(dd.classList.contains('open')){
+    renderIconGrid();
+    document.getElementById('iconSearchInput').focus();
+  }
+}
+
+document.addEventListener('click', e => {
+  const picker = document.getElementById('iconPicker');
+  if(picker && !picker.contains(e.target)){
+    document.getElementById('iconDropdown').classList.remove('open');
+  }
+});
+
+// =================== THEME ===================
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  const isDark = t==='dark';
+  document.getElementById('themeEmoji').textContent  = isDark ? '☀️' : '🌙';
+  document.getElementById('themeLabel').textContent  = isDark ? 'Clair' : 'Sombre';
+  localStorage.setItem('portal_theme', t);
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  applyTheme(cur==='dark' ? 'light' : 'dark');
+}
+applyTheme(localStorage.getItem('portal_theme') || 'dark');
+
+// =================== SERVICES STORE ===================
+const DEFAULT_SERVICES = [
+  {id:'scada_central',  name:'SCADA Central',   tag:'Supervision Centrale', desc:'Supervision centralisée de toutes les stations électriques (Station A et Station B)', icon:'📱', url:'', port:1884, network:'L3 — 192.168.30.10'},
+  {id:'scada_station_a',name:'SCADA Station A', tag:'Station A — L1',       desc:"Interface de supervision et de contrôle de la Station A",                            icon:'📱', url:'', port:1881, network:'L1 — 192.168.10.20'},
+  {id:'scada_station_b',name:'SCADA Station B', tag:'Station B — L2',       desc:"Interface de supervision et de contrôle de la Station B",                            icon:'📱', url:'', port:1882, network:'L2 — 192.168.20.20'},
+  {id:'plc_station_a',  name:'PLC Station A',   tag:'Automate — L1',        desc:"Interface web de l'automate OpenPLC de la station A.",                               icon:'🤖', url:'', port:8080, network:'L1 — 192.168.10.10'},
+  {id:'plc_station_b',  name:'PLC Station B',   tag:'Automate — L2',        desc:"Interface web de l'automate OpenPLC de la station B.",                               icon:'🤖', url:'', port:8081, network:'L2 — 192.168.20.10'},
+  {id:'ews',            name:'Engineering WS',  tag:'Workstation — L3',     desc:'Station de travail ingénieur pour les Stations électriques',                         icon:'💻', url:'', port:6080, network:'L3 — 192.168.30.20'},
+  {id:'kali',           name:'Kali Attacker',   tag:'Pentest — L3',         desc:"Machine Kali Linux pour les tests d'intrusion.",                                     icon:'☠️', url:'', port:6081, network:'L3 — 192.168.30.30'},
+  {id:'router_r1',      name:'Routeur R1–R3',   tag:'Infrastructure',       desc:"Interface d'administration du routeur L1/L3.",                                       icon:'🔀', url:'', port:1444, network:'L1/L3'},
+  {id:'router_r2',      name:'Routeur R2–R3',   tag:'Infrastructure',       desc:"Interface d'administration du routeur L2/L3.",                                       icon:'🔀', url:'', port:1443, network:'L2/L3'},
+];
+
+async function loadServicesFromAPI(){
+  try {
+    const res = await fetch('/api/services');
+    if(res.ok) return await res.json();
+  } catch {}
+  return JSON.parse(JSON.stringify(DEFAULT_SERVICES));
+}
+
+let SERVICES = [];
+let currentUser = null;
+
+function isSuperAdmin(){ return currentUser && currentUser.role === 'superadmin'; }
+function isAdmin(){ return currentUser && (currentUser.role === 'admin' || currentUser.role === 'superadmin'); }
+
+// Un admin (non-superadmin) ne doit ni voir ni pouvoir sélectionner le rôle "superadmin".
+// Le backend impose la même règle indépendamment de ceci (defense in depth).
+function applyRolePermissions(){
+  const canAssignSuperadmin = isSuperAdmin();
+  document.querySelectorAll('#addRole option[value="superadmin"], #editRole option[value="superadmin"]').forEach(opt => {
+    opt.hidden = !canAssignSuperadmin;
+    opt.disabled = !canAssignSuperadmin;
+  });
+}
+
+// Ports terminated in TLS by the reverse-proxy (self-signed cert) rather than plain HTTP.
+const HTTPS_PORTS = new Set([6080, 6081]);
+
+function cardUrl(s){
+  if(s.url && s.url.trim()) return s.url.trim();
+  const scheme = HTTPS_PORTS.has(s.port) ? 'https' : 'http';
+  return `${scheme}://${location.hostname}:${s.port}/`;
+}
+
+function redirectTarget(){
+  return new URLSearchParams(location.search).get('redirect');
+}
+
+// =================== LOGIN ===================
+async function doLogin(){
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('loginBtn');
+  if(!username || !password){ showLoginError('Veuillez remplir tous les champs.'); return; }
+  btn.disabled = true; btn.textContent = 'Authentification…';
+  document.getElementById('loginError').classList.remove('show');
+  try {
+    const res = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error||'Erreur inconnue');
+    currentUser = data.user;
+    const redirect = redirectTarget();
+    if(redirect){ window.location.href = redirect; return; }
+    showPortal();
+  } catch(e){ showLoginError(e.message); }
+  finally { btn.disabled=false; btn.textContent='Accéder au portail'; }
+}
+
+function showLoginError(msg){
+  const el = document.getElementById('loginError');
+  el.textContent = '⚠ '+msg; el.classList.add('show');
+}
+document.getElementById('password').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+// =================== PORTAL ===================
+async function showPortal(){
+  document.getElementById('loginPage').classList.remove('active');
+  document.getElementById('portalPage').classList.add('active');
+  document.getElementById('userNameDisplay').textContent = currentUser.displayName || currentUser.username;
+  document.getElementById('userAvatar').textContent = (currentUser.displayName || currentUser.username).charAt(0).toUpperCase();
+  document.getElementById('newDisplayName').value = currentUser.displayName || '';
+  if(isAdmin()) document.getElementById('navAdmin').style.display = '';
+  applyRolePermissions();
+  // Load services from server (shared persistence)
+  SERVICES = await loadServicesFromAPI();
+  renderServices();
+}
+
+function renderServices(){
+  const grid = document.getElementById('servicesGrid');
+  const sa = isSuperAdmin();
+  grid.innerHTML = SERVICES.map(s => `
+    <a class="service-card" href="${cardUrl(s)}" target="_blank" rel="noopener">
+      <div class="card-accent"></div>
+      ${sa ? `<div class="card-actions">
+        <button class="card-act-btn card-act-edit" onclick="openSvcModal('edit','${s.id}');event.preventDefault();event.stopPropagation()">✏ Éditer</button>
+        <button class="card-act-btn card-act-del"  onclick="deleteService('${s.id}');event.preventDefault();event.stopPropagation()">🗑</button>
+      </div>` : ''}
+      <div class="card-body">
+        <div class="card-icon">${s.icon}</div>
+        <div class="card-name">${s.name}</div>
+        <div class="card-tag">${s.tag}</div>
+        <div class="card-desc">${s.desc}</div>
+      </div>
+      <div class="card-footer">
+        <span class="card-port"><span class="status-dot"></span>&nbsp;:${s.port}&nbsp;·&nbsp;${s.network}</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+  `).join('') + (sa ? `
+    <div class="add-card" onclick="openSvcModal('add')">
+      <span class="add-card-icon">➕</span>
+      Ajouter une interface
+    </div>` : '');
+}
+
+// =================== SERVICE MODAL ===================
+function openSvcModal(mode, id=null){
+  currentIcon = '📱';
+  document.getElementById('iconPreview').textContent = '📱';
+  document.getElementById('svcModalAlert').classList.remove('show');
+  document.getElementById('iconDropdown').classList.remove('open');
+
+  if(mode==='add'){
+    document.getElementById('svcModalTitle').textContent = '➕ Ajouter une interface';
+    document.getElementById('svcModalId').value = '';
+    ['svcName','svcTag','svcDesc','svcUrl','svcNetwork'].forEach(f => document.getElementById(f).value='');
+    document.getElementById('svcPort').value = '';
+  } else {
+    const s = SERVICES.find(x=>x.id===id);
+    if(!s) return;
+    document.getElementById('svcModalTitle').textContent = '✏ Modifier l\'interface';
+    document.getElementById('svcModalId').value = id;
+    document.getElementById('svcName').value = s.name;
+    document.getElementById('svcTag').value = s.tag;
+    document.getElementById('svcDesc').value = s.desc;
+    document.getElementById('svcUrl').value = s.url||'';
+    document.getElementById('svcNetwork').value = s.network;
+    document.getElementById('svcPort').value = s.port;
+    currentIcon = s.icon;
+    document.getElementById('iconPreview').textContent = s.icon;
+  }
+  document.getElementById('serviceModal').classList.add('show');
+}
+
+async function saveService(){
+  const id      = document.getElementById('svcModalId').value;
+  const name    = document.getElementById('svcName').value.trim();
+  const tag     = document.getElementById('svcTag').value.trim();
+  const desc    = document.getElementById('svcDesc').value.trim();
+  const url     = document.getElementById('svcUrl').value.trim();
+  const network = document.getElementById('svcNetwork').value.trim();
+  const port    = parseInt(document.getElementById('svcPort').value)||0;
+  const alertEl = document.getElementById('svcModalAlert');
+
+  if(!name || !url){ showAlert(alertEl,'error','Titre et URL sont requis.'); return; }
+
+  const body = { name, tag, desc, url, network, port, icon: currentIcon };
+
+  try {
+    if(id){
+      const res = await fetch('/api/services/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const resp = await res.json();
+      if(!res.ok) throw new Error(resp.error);
+      const idx = SERVICES.findIndex(s => s.id === id);
+      if(idx > -1) SERVICES[idx] = { ...SERVICES[idx], ...body };
+    } else {
+      const res = await fetch('/api/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const resp = await res.json();
+      if(!res.ok) throw new Error(resp.error);
+      SERVICES.push(resp.service);
+    }
+    closeModal('serviceModal');
+    renderServices();
+  } catch(e){
+    showAlert(alertEl, 'error', e.message);
+  }
+}
+
+async function deleteService(id){
+  const s = SERVICES.find(x => x.id === id);
+  if(!s || !confirm('Supprimer "' + s.name + '" ?')) return;
+  try {
+    const res = await fetch('/api/services/' + id, { method: 'DELETE' });
+    const resp = await res.json();
+    if(!res.ok) throw new Error(resp.error);
+    SERVICES = SERVICES.filter(x => x.id !== id);
+    renderServices();
+  } catch(e){
+    alert('Erreur : ' + e.message);
+  }
+}
+
+// =================== NAVIGATION ===================
+function showSection(name){
+  ['portal','settings','admin'].forEach(n => {
+    document.getElementById('section'+n.charAt(0).toUpperCase()+n.slice(1)).classList.toggle('active', n===name);
+    const btn = document.getElementById('nav'+n.charAt(0).toUpperCase()+n.slice(1));
+    if(btn) btn.classList.toggle('active', n===name);
+  });
+  if(name==='admin') loadUsers();
+}
+
+// =================== LOGOUT ===================
+async function doLogout(){
+  await fetch('/api/logout',{method:'POST'});
+  currentUser = null;
+  document.getElementById('portalPage').classList.remove('active');
+  document.getElementById('loginPage').classList.add('active');
+  document.getElementById('username').value='';
+  document.getElementById('password').value='';
+  document.getElementById('loginError').classList.remove('show');
+  document.getElementById('navAdmin').style.display='none';
+  SERVICES=[];
+  showSection('portal');
+}
+
+// =================== PROFILE ===================
+async function saveProfile(){
+  const newUsername = document.getElementById('newUsername').value.trim();
+  const newPassword = document.getElementById('newPassword').value;
+  const confirmPwd  = document.getElementById('confirmPassword').value;
+  const displayName = document.getElementById('newDisplayName').value.trim();
+  const alertEl = document.getElementById('settingsAlert');
+  if(newPassword && newPassword!==confirmPwd){ showAlert(alertEl,'error','Les mots de passe ne correspondent pas.'); return; }
+  const body={};
+  if(newUsername) body.username=newUsername;
+  if(newPassword) body.password=newPassword;
+  if(displayName) body.displayName=displayName;
+  try {
+    const res = await fetch(`/api/users/${currentUser.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    showAlert(alertEl,'success','Profil mis à jour. Reconnectez-vous si vous avez changé vos identifiants.');
+    if(displayName){
+      currentUser.displayName=displayName;
+      document.getElementById('userNameDisplay').textContent=displayName;
+      document.getElementById('userAvatar').textContent=displayName.charAt(0).toUpperCase();
+    }
+    document.getElementById('newPassword').value='';
+    document.getElementById('confirmPassword').value='';
+  } catch(e){ showAlert(alertEl,'error',e.message); }
+}
+
+// =================== USER MANAGEMENT ===================
+async function loadUsers(){
+  try {
+    const res = await fetch('/api/users');
+    const users = await res.json();
+    document.getElementById('usersTableBody').innerHTML = users.map(u => `
+      <tr>
+        <td><b>${u.username}</b></td>
+        <td>${u.displayName||'—'}</td>
+        <td><span class="role-badge role-${u.role}">${u.role}</span></td>
+        <td style="display:flex;gap:6px;padding:8px 12px;">
+          <button class="btn-sm btn-ghost" style="padding:5px 12px;font-size:0.8rem" onclick="openEditModal('${u.id}','${u.username}','${u.displayName||''}','${u.role}')">Éditer</button>
+          ${u.id!==currentUser.id?`<button class="btn-sm btn-danger" style="padding:5px 12px;font-size:0.8rem" onclick="deleteUser('${u.id}','${u.username}')">Supprimer</button>`:''}
+        </td>
+      </tr>`).join('');
+  } catch {}
+}
+
+async function addUser(){
+  const username=document.getElementById('addUsername').value.trim();
+  const displayName=document.getElementById('addDisplayName').value.trim();
+  const password=document.getElementById('addPassword').value;
+  const role=document.getElementById('addRole').value;
+  const alertEl=document.getElementById('addUserAlert');
+  if(!username||!password){ showAlert(alertEl,'error','Username et mot de passe requis.'); return; }
+  try {
+    const res = await fetch('/api/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password,role,displayName})});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    showAlert(alertEl,'success',`Utilisateur "${username}" créé.`);
+    document.getElementById('addUsername').value='';
+    document.getElementById('addDisplayName').value='';
+    document.getElementById('addPassword').value='';
+    loadUsers();
+  } catch(e){ showAlert(alertEl,'error',e.message); }
+}
+
+async function deleteUser(id,username){
+  if(!confirm(`Supprimer l'utilisateur "${username}" ?`)) return;
+  const alertEl=document.getElementById('adminAlert');
+  try {
+    const res = await fetch(`/api/users/${id}`,{method:'DELETE'});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    showAlert(alertEl,'success',`Utilisateur "${username}" supprimé.`);
+    loadUsers();
+  } catch(e){ showAlert(alertEl,'error',e.message); }
+}
+
+function openEditModal(id,username,displayName,role){
+  document.getElementById('editUserId').value=id;
+  document.getElementById('editUsername').value=username;
+  document.getElementById('editDisplayName').value=displayName;
+  document.getElementById('editRole').value=role;
+  document.getElementById('editPassword').value='';
+  document.getElementById('editModalAlert').classList.remove('show');
+  document.getElementById('editModal').classList.add('show');
+}
+
+async function saveEditUser(){
+  const id=document.getElementById('editUserId').value;
+  const username=document.getElementById('editUsername').value.trim();
+  const displayName=document.getElementById('editDisplayName').value.trim();
+  const password=document.getElementById('editPassword').value;
+  const role=document.getElementById('editRole').value;
+  const alertEl=document.getElementById('editModalAlert');
+  try {
+    const res = await fetch(`/api/users/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,displayName,...(password?{password}:{}),role})});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    closeModal('editModal'); loadUsers();
+  } catch(e){ showAlert(alertEl,'error',e.message); }
+}
+
+function closeModal(id){
+  document.getElementById(id).classList.remove('show');
+  document.getElementById('iconDropdown')?.classList.remove('open');
+}
+
+function showAlert(el,type,msg){
+  el.className=`alert alert-${type} show`; el.textContent=msg;
+  setTimeout(()=>el.classList.remove('show'),4000);
+}
+
+['editModal','serviceModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(id); });
+});
+
+// Check session on load + init superadmin in server.js
+(async()=>{
+  try {
+    const res = await fetch('/api/me');
+    if(res.ok){
+      const data=await res.json(); currentUser=data.user;
+      const redirect = redirectTarget();
+      if(redirect){ window.location.href = redirect; return; }
+      await showPortal();
+    }
+  } catch {}
+})();
+</script>
+</body>
+</html>

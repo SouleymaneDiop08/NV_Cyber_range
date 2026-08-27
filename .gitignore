@@ -1,0 +1,45 @@
+# =============================================================================
+# Talixman Range — dépôt principal
+# =============================================================================
+
+# --- Secrets : ne doivent JAMAIS être versionnés ---------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Sauvegardes (dumps SQL + archives de code, contiennent des secrets) ----
+backups/
+
+# --- Dépendances et sorties de build ---------------------------------------
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+coverage/
+
+# --- Artefacts Docker régénérables -----------------------------------------
+# Produits par dispatching/build-images.sh (~1,6 Go). Se reconstruisent avec
+# `./build-images.sh` — les versionner n'apporterait rien et saturerait le dépôt.
+dispatching/image-tars/*.tar
+
+# --- Modèle 3D intermédiaire, non référencé par le code --------------------
+# Sous-produit de conversion (145 Mo). Seuls model.dae et model-optimized.glb
+# sont utilisés — cf. viewer3d-station-b/frontend/static/index.html.
+dispatching/viewer3d-station-b/frontend/static/assets/extracted/electrical_substation/model-converted-raw.glb
+
+# --- Données d'exécution des laboratoires ----------------------------------
+# Générées par FUXA pendant les sessions : historiques, archives, uploads.
+# Les projets eux-mêmes (project.fuxap.db) restent versionnés.
+**/appdata/daq-data_*.db
+**/appdata/archive/
+**/appdata/*.bak-*
+**/webserver/openplc.db-journal
+
+# --- Divers ----------------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.log
+.~lock.*
+/tmp/

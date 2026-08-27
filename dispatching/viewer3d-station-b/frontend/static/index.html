@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Station B — Poste électrique 3D</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0d1b2a; color: #e2e8f0; overflow: hidden; }
+    #container { display: flex; height: 100vh; }
+    #canvas-container { flex: 1; position: relative; }
+    canvas { display: block; }
+
+    /* Loading */
+    #loading {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; z-index: 200;
+      background: rgba(13,27,42,.94); backdrop-filter: blur(4px);
+    }
+    #loading-title { color: #60a5fa; font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
+    #loading-text  { color: #94a3b8; font-size: .85rem; margin-top: 10px; }
+    #loading-bar-wrap { width: 260px; height: 5px; background: rgba(255,255,255,.1); border-radius: 3px; margin-top: 10px; overflow: hidden; }
+    #loading-bar { height: 100%; width: 0%; background: #3b82f6; border-radius: 3px; transition: width .3s; }
+    .spinner { width: 38px; height: 38px; border: 3px solid rgba(59,130,246,.2); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* HUD badges */
+    #mode-badge {
+      position: absolute; top: 12px; left: 12px; z-index: 100;
+      padding: 6px 12px; font-size: .78rem; border-radius: 7px; font-weight: 600;
+      border: 1px solid rgba(148,163,184,.2); background: rgba(13,27,42,.88); backdrop-filter: blur(4px);
+    }
+    #mode-badge.live        { color: #4ade80; border-color: rgba(74,222,128,.3); }
+    #mode-badge.simulation  { color: #fbbf24; border-color: rgba(251,191,36,.3); }
+    #mode-badge.disconnected{ color: #f87171; border-color: rgba(248,113,113,.35); }
+
+    /* Edit toggle */
+    #edit-toggle {
+      position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 100;
+      padding: 7px 18px; font-size: .78rem; border-radius: 7px; font-weight: 700;
+      border: 1px solid rgba(148,163,184,.2); background: rgba(13,27,42,.88);
+      backdrop-filter: blur(4px); cursor: pointer; color: #94a3b8; transition: all .2s;
+    }
+    #edit-toggle:hover { color: #e2e8f0; border-color: rgba(148,163,184,.4); }
+    #edit-toggle.active { color: #fbbf24; border-color: rgba(251,191,36,.5); background: rgba(251,191,36,.1); box-shadow: 0 0 14px rgba(251,191,36,.2); }
+
+    #edit-hint {
+      position: absolute; top: 48px; left: 50%; transform: translateX(-50%); z-index: 100;
+      padding: 4px 12px; font-size: .7rem; border-radius: 5px; display: none;
+      background: rgba(251,191,36,.12); color: #fbbf24; border: 1px solid rgba(251,191,36,.3); white-space: nowrap;
+    }
+    #reset-pos {
+      position: absolute; top: 76px; left: 50%; transform: translateX(-50%); z-index: 100;
+      padding: 3px 10px; font-size: .68rem; border-radius: 5px; display: none;
+      background: rgba(99,102,241,.12); color: #818cf8; border: 1px solid rgba(99,102,241,.3);
+      cursor: pointer; white-space: nowrap;
+    }
+    #reset-pos:hover { background: rgba(99,102,241,.2); }
+
+    #timestamp {
+      position: absolute; bottom: 12px; left: 12px; z-index: 100;
+      padding: 4px 10px; font-size: .72rem; color: #64748b;
+      background: rgba(13,27,42,.80); border-radius: 5px; border: 1px solid rgba(148,163,184,.1);
+    }
+
+    /* Legend */
+    #legend {
+      position: absolute; bottom: 12px; right: 12px; z-index: 100;
+      padding: 9px 13px; font-size: .73rem;
+      background: rgba(13,27,42,.88); border-radius: 8px;
+      border: 1px solid rgba(148,163,184,.15); backdrop-filter: blur(4px);
+    }
+    .leg-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; color: #94a3b8; }
+    .leg-item:last-child { margin-bottom: 0; }
+    .leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Sidebar */
+    #sidebar { width: 330px; overflow-y: auto; padding: 13px; background: rgba(10,18,30,.96); border-left: 1px solid rgba(148,163,184,.12); }
+    h1 { color: #60a5fa; font-size: 1rem; margin-bottom: 11px; padding-bottom: 8px; border-bottom: 1px solid rgba(148,163,184,.12); }
+    h2 { margin: 12px 0 6px; color: #34d399; font-size: .74rem; text-transform: uppercase; letter-spacing: 1.1px; font-weight: 600; }
+    .card { background: rgba(255,255,255,.04); border: 1px solid rgba(148,163,184,.09); border-radius: 7px; padding: 9px; margin-bottom: 8px; }
+    .status-bar { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .dot.ok   { background: #22c55e; box-shadow: 0 0 6px #22c55e; animation: pulse 2s infinite; }
+    .dot.warn { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; animation: pulse 1.5s infinite; }
+    .dot.err  { background: #ef4444; box-shadow: 0 0 6px #ef4444; animation: blink .8s infinite; }
+    .metric-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.04); font-size: .81rem; }
+    .metric-row:last-child { border-bottom: none; }
+    .metric-label { color: #64748b; }
+    .mv { font-family: 'Courier New', monospace; font-weight: 700; }
+    .mv.ok      { color: #4ade80; }
+    .mv.warn    { color: #fbbf24; }
+    .mv.crit    { color: #f87171; }
+    .mv.neutral { color: #64748b; }
+    .brk { display: inline-block; border-radius: 4px; padding: 1px 7px; font-size: .71rem; font-weight: 700; }
+    .brk.closed { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.25); }
+    .brk.open   { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.25); }
+    .alm { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: .71rem; font-weight: 700; }
+    .alm.on  { background: rgba(239,68,68,.25); color: #f87171; border: 1px solid rgba(239,68,68,.4); animation: blink .7s infinite; }
+    .alm.off { background: rgba(148,163,184,.08); color: #475569; border: 1px solid rgba(148,163,184,.12); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.15} }
+    #explosion-flash {
+      position: absolute; inset: 0; pointer-events: none; z-index: 49; opacity: 0;
+      background: radial-gradient(ellipse at 62% 45%, rgba(255,245,140,1) 0%, rgba(255,110,0,0.92) 22%, rgba(220,30,0,0.65) 55%, transparent 82%);
+    }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148,163,184,.2); border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div id="container">
+  <div id="canvas-container">
+    <div id="loading">
+      <div class="spinner"></div>
+      <div id="loading-title">Station B — Poste électrique HTA/BT</div>
+      <div id="loading-text">Chargement du modèle…</div>
+      <div id="loading-bar-wrap"><div id="loading-bar"></div></div>
+    </div>
+    <div id="mode-badge" class="disconnected">● CONNEXION…</div>
+    <button id="edit-toggle">✏ Mode édition</button>
+    <div id="edit-hint">Cliquez-glissez les panneaux 3D pour les repositionner</div>
+    <button id="reset-pos">↺ Réinitialiser positions</button>
+    <div id="timestamp">--</div>
+    <div id="explosion-flash"></div>
+    <div id="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:#4ade80;box-shadow:0 0 5px #4ade80"></div>Fermé / Sous tension</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#f87171;box-shadow:0 0 5px #f87171"></div>Ouvert / Hors tension</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#fb923c;box-shadow:0 0 5px #fb923c"></div>Alarme active</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#94a3b8"></div>État inconnu</div>
+    </div>
+  </div>
+
+  <div id="sidebar">
+    <h1>⚡ Station B — Poste HTA/BT</h1>
+    <div class="status-bar">
+      <div class="dot err" id="conn-dot"></div>
+      <span id="conn-label" style="font-size:.83rem;color:#94a3b8">PLC NON CONNECTÉ</span>
+    </div>
+    <h2>Réseau</h2>
+    <div class="card">
+      <div class="metric-row"><span class="metric-label">Fréquence</span><span class="mv neutral" id="s-freq">-- Hz</span></div>
+      <div class="metric-row"><span class="metric-label">Tension jeu de barres</span><span class="mv neutral" id="s-busv">-- kV</span></div>
+      <div class="metric-row"><span class="metric-label">Tension ligne</span><span class="mv neutral" id="s-linev">-- kV</span></div>
+      <div class="metric-row"><span class="metric-label">Courant ligne</span><span class="mv neutral" id="s-linei">-- A</span></div>
+      <div class="metric-row"><span class="metric-label">Puissance</span><span class="mv neutral" id="s-linep">-- MW</span></div>
+    </div>
+    <h2>Conduite HT</h2>
+    <div class="card">
+      <div class="metric-row"><span class="metric-label">DJ principal</span><span class="brk open" id="s-cb">OUVERT</span></div>
+      <div class="metric-row"><span class="metric-label">Sect. ligne</span><span class="brk open" id="s-dsline">OUVERT</span></div>
+      <div class="metric-row"><span class="metric-label">Sect. barres</span><span class="brk open" id="s-dsbus">OUVERT</span></div>
+      <div class="metric-row"><span class="metric-label">Jeu de barres</span><span class="mv neutral" id="s-busbar">--</span></div>
+    </div>
+    <h2>Transformateur 1</h2>
+    <div class="card">
+      <div class="metric-row"><span class="metric-label">DJ</span><span class="brk open" id="s-tx1cb">OUVERT</span></div>
+      <div class="metric-row"><span class="metric-label">Tension sortie</span><span class="mv neutral" id="s-tx1v">-- kV</span></div>
+      <div class="metric-row"><span class="metric-label">Temp. huile</span><span class="mv neutral" id="s-tx1oil">-- °C</span></div>
+      <div class="metric-row"><span class="metric-label">Temp. bobinage</span><span class="mv neutral" id="s-tx1wind">-- °C</span></div>
+      <div class="metric-row"><span class="metric-label">Alarme temp.</span><span class="alm off" id="s-tx1alm">OK</span></div>
+    </div>
+    <h2>Transformateur 2</h2>
+    <div class="card">
+      <div class="metric-row"><span class="metric-label">DJ</span><span class="brk open" id="s-tx2cb">OUVERT</span></div>
+      <div class="metric-row"><span class="metric-label">Tension sortie</span><span class="mv neutral" id="s-tx2v">-- kV</span></div>
+      <div class="metric-row"><span class="metric-label">Temp. huile</span><span class="mv neutral" id="s-tx2oil">-- °C</span></div>
+      <div class="metric-row"><span class="metric-label">Temp. bobinage</span><span class="mv neutral" id="s-tx2wind">-- °C</span></div>
+      <div class="metric-row"><span class="metric-label">Alarme temp.</span><span class="alm off" id="s-tx2alm">OK</span></div>
+    </div>
+    <h2>Départ 1</h2>
+    <div class="card">
+      <div class="metric-row"><span class="metric-label">DJ</span><span class="brk open" id="s-f1cb">OUVERT</span></div>
+      <div class="metric-row"><span class="metric-label">I L1 / L2 / L3</span><span class="mv neutral" id="s-f1i">-- / -- / -- A</span></div>
+      <div class="metric-row"><span class="metric-label">Déséquilibre</span><span class="mv neutral" id="s-f1unb">-- %</span></div>
+      <div class="metric-row"><span class="metric-label">Alarme</span><span class="alm off" id="s-f1alm">OK</span></div>
+    </div>
+    <h2>Départ 2</h2>
+    <div class="card">
+      <div class="metric-row"><span class="metric-label">DJ</span><span class="brk open" id="s-f2cb">OUVERT</span></div>
+      <div class="metric-row"><span class="metric-label">I L1 / L2 / L3</span><span class="mv neutral" id="s-f2i">-- / -- / -- A</span></div>
+      <div class="metric-row"><span class="metric-label">Déséquilibre</span><span class="mv neutral" id="s-f2unb">-- %</span></div>
+      <div class="metric-row"><span class="metric-label">Alarme</span><span class="alm off" id="s-f2alm">OK</span></div>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls }   from 'three/addons/controls/OrbitControls.js';
+import { ColladaLoader }    from 'three/addons/loaders/ColladaLoader.js';
+
+const LS_KEY = 'viewer3d_stationb_v4_positions';
+
+// ─── Polyfill roundRect ───────────────────────────────────────────────────────
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    this.moveTo(x + r, y); this.lineTo(x + w - r, y);
+    this.arcTo(x + w, y, x + w, y + r, r); this.lineTo(x + w, y + h - r);
+    this.arcTo(x + w, y + h, x + w - r, y + h, r); this.lineTo(x + r, y + h);
+    this.arcTo(x, y + h, x, y + h - r, r); this.lineTo(x, y + r);
+    this.arcTo(x, y, x + r, y, r); this.closePath();
+  };
+}
+
+// ─── Renderer WebGL ──────────────────────────────────────────────────────────
+const container = document.getElementById('canvas-container');
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.95;
+renderer.setSize(container.clientWidth, container.clientHeight);
+container.appendChild(renderer.domElement);
+
+function resize() {
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+
+// ─── Scene ───────────────────────────────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d1b2a);
+scene.fog = new THREE.FogExp2(0x0d1b2a, 0.0022);
+
+// ─── Camera ──────────────────────────────────────────────────────────────────
+const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 2000);
+camera.position.set(60, 50, 100);
+
+// ─── Controls ────────────────────────────────────────────────────────────────
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.minDistance = 3;
+controls.maxDistance = 600;
+controls.maxPolarAngle = Math.PI / 2.02;
+controls.screenSpacePanning = false;
+
+// ─── Éclairage ───────────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0xd0dce8, 0.55));
+const hemi = new THREE.HemisphereLight(0xc8d8ea, 0x2a3a22, 0.45);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff5e0, 1.6);
+sun.position.set(80, 120, 60);
+sun.castShadow = true;
+sun.shadow.mapSize.width = 1024; sun.shadow.mapSize.height = 1024;
+sun.shadow.camera.near = 1; sun.shadow.camera.far = 800;
+sun.shadow.camera.left = -200; sun.shadow.camera.right = 200;
+sun.shadow.camera.top = 200; sun.shadow.camera.bottom = -200;
+sun.shadow.bias = -0.0008;
+scene.add(sun);
+const fill = new THREE.DirectionalLight(0x6088cc, 0.35); fill.position.set(-60, 30, -80); scene.add(fill);
+
+// ─── Sol ─────────────────────────────────────────────────────────────────────
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), new THREE.MeshLambertMaterial({ color: 0x1a2518 }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
+scene.add(ground);
+const grid = new THREE.GridHelper(500, 100, 0x1e3320, 0x172418);
+grid.position.y = 0.02; scene.add(grid);
+
+// ─── Définitions widgets ──────────────────────────────────────────────────────
+const WIDGET_DEFS = [
+  { key: 'main_cb',  label: 'DJ Principal',   xFrac: 0.15, zFrac: 0.28, yFrac: 0.58, stemHeightFrac: 0.18 },
+  { key: 'busbar',   label: 'Jeu de barres',  xFrac: 0.46, zFrac: 0.30, yFrac: 0.65, stemHeightFrac: 0.55 },
+  { key: 'tx1',      label: 'Transfo 1',      xFrac: 0.34, zFrac: 0.48, yFrac: 0.52, stemHeightFrac: 0.62 },
+  { key: 'tx2',      label: 'Transfo 2',      xFrac: 0.60, zFrac: 0.48, yFrac: 0.52, stemHeightFrac: 0.62 },
+  { key: 'feeder1',  label: 'Départ 1',       xFrac: 0.30, zFrac: 0.72, yFrac: 0.55, stemHeightFrac: 0.20 },
+  { key: 'feeder2',  label: 'Départ 2',       xFrac: 0.68, zFrac: 0.72, yFrac: 0.55, stemHeightFrac: 0.20 },
+];
+
+const W_COLORS_HEX = {
+  green:  '#4ade80',
+  red:    '#f87171',
+  orange: '#fb923c',
+  gray:   '#64748b'
+};
+
+// ─── Widgets 3D (canvas texture sur PlaneGeometry) ────────────────────────────
+const widgetObjects = {};
+const widgetMeshes  = [];
+
+const CWIDTH  = 180;
+const CHEIGHT = 72;
+
+function redrawWidget(key) {
+  const w = widgetObjects[key];
+  if (!w) return;
+  const { ctx, cw, ch, label, colorKey, statusText, valHtml } = w;
+  const c = W_COLORS_HEX[colorKey] || W_COLORS_HEX.gray;
+
+  ctx.clearRect(0, 0, cw, ch);
+
+  ctx.beginPath(); ctx.roundRect(2, 2, cw - 4, ch - 4, 8);
+  ctx.fillStyle = 'rgba(8,15,26,0.92)';
+  ctx.fill();
+
+  ctx.beginPath(); ctx.roundRect(2, 2, cw - 4, ch - 4, 8);
+  ctx.strokeStyle = c + 'cc';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.beginPath(); ctx.arc(14, 15, 5, 0, Math.PI * 2);
+  ctx.fillStyle = c;
+  ctx.shadowColor = c;
+  ctx.shadowBlur = 6;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.font = 'bold 11px "Segoe UI", system-ui, Arial, sans-serif';
+  ctx.fillStyle = '#cbd5e1';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label.toUpperCase(), 26, 15);
+
+  ctx.font = 'bold 9px "Courier New", monospace';
+  const stW = ctx.measureText(statusText).width;
+  const bx = cw - stW - 16, by = 6, bw = stW + 10, bh = 16;
+  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 4);
+  ctx.fillStyle = c + '24';
+  ctx.fill();
+  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 4);
+  ctx.strokeStyle = c + '88';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = c;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(statusText, bx + 5, by + 8);
+
+  ctx.beginPath();
+  ctx.moveTo(8, 28); ctx.lineTo(cw - 8, 28);
+  ctx.strokeStyle = 'rgba(148,163,184,0.12)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  if (valHtml) {
+    const parsed = parseValHtml(valHtml);
+    const first = parsed[0];
+    if (first) {
+      ctx.font = '10px "Courier New", monospace';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = first.cls === 'crit' ? '#f87171' : first.cls === 'warn' ? '#fbbf24' : first.cls === 'ok' ? '#4ade80' : '#94a3b8';
+      ctx.fillText(first.text, 8, 34);
+    }
+  }
+
+  if (w.isEditMode) {
+    ctx.font = '11px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = 'rgba(251,191,36,0.75)';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('✥ DÉPLAÇABLE', 14, ch - 8);
+  }
+
+  w.texture.needsUpdate = true;
+}
+
+function parseValHtml(html) {
+  const result = [];
+  const regex = /<(?:b|span)[^>]*class="([^"]*)"[^>]*>(.*?)<\/(?:b|span)>|([^<]+)/g;
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    if (match[3]) {
+      const txt = match[3].trim();
+      if (txt) result.push({ text: txt, cls: '' });
+    } else if (match[1] !== undefined) {
+      result.push({ text: match[2], cls: match[1] });
+    }
+  }
+  if (result.length === 0) {
+    const plain = html.replace(/<[^>]+>/g, '').trim();
+    if (plain) result.push({ text: plain, cls: '' });
+  }
+  return result;
+}
+
+// ─── Effets d'alarme critique ─────────────────────────────────────────────────
+const criticalEffects = {};
+let sceneShake = { strength: 0, until: 0 };
+const baseCameraOffset = new THREE.Vector3();
+
+function makeSmokeTexture() {
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 128;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(64, 64, 10, 64, 64, 58);
+  g.addColorStop(0, 'rgba(120,120,120,0.65)');
+  g.addColorStop(0.45, 'rgba(90,90,90,0.33)');
+  g.addColorStop(1, 'rgba(50,50,50,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+}
+const SMOKE_TEXTURE = makeSmokeTexture();
+
+function makeFireTexture() {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(32, 40, 3, 32, 28, 30);
+  g.addColorStop(0,    'rgba(255,255,200,1)');
+  g.addColorStop(0.22, 'rgba(255,170,0,0.95)');
+  g.addColorStop(0.55, 'rgba(255,50,0,0.65)');
+  g.addColorStop(1,    'rgba(180,10,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
+const FIRE_TEXTURE = makeFireTexture();
+
+function createCriticalEffect() {
+  const group = new THREE.Group();
+  group.visible = false;
+  const rings = [];
+  for (let i = 0; i < 6; i++) {
+    const mat = new THREE.MeshBasicMaterial({ color: 0xff4400, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+    const mesh = new THREE.Mesh(new THREE.TorusGeometry(2.8, 0.18, 10, 64), mat);
+    mesh.rotation.x = Math.PI / 2;
+    group.add(mesh);
+    rings.push({ mesh, phase: (i / 6) * Math.PI * 2 });
+  }
+  const light = new THREE.PointLight(0xff5500, 0, 60);
+  group.add(light);
+  const smoke = [];
+  for (let i = 0; i < 42; i++) {
+    const material = new THREE.SpriteMaterial({ map: SMOKE_TEXTURE, transparent: true, opacity: 0, depthWrite: false, color: 0xd1d5db });
+    const sprite = new THREE.Sprite(material);
+    sprite.scale.setScalar(10.0 + i * 0.8);
+    group.add(sprite);
+    smoke.push({ sprite, seed: i * 0.23, drift: (i % 2 === 0 ? 1 : -1) * (0.55 + i * 0.07) });
+  }
+
+  const blastMat = new THREE.MeshBasicMaterial({ color: 0xffaa33, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  const blast = new THREE.Mesh(new THREE.SphereGeometry(4.8, 28, 28), blastMat);
+  blast.visible = false;
+  group.add(blast);
+
+  const shockwaveMat = new THREE.MeshBasicMaterial({ color: 0xffdd88, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
+  const shockwave = new THREE.Mesh(new THREE.TorusGeometry(4.5, 0.45, 16, 80), shockwaveMat);
+  shockwave.rotation.x = Math.PI / 2;
+  shockwave.visible = false;
+  group.add(shockwave);
+
+  // Second shockwave (delayed)
+  const sw2Mat = new THREE.MeshBasicMaterial({ color: 0xff9944, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
+  const shockwave2 = new THREE.Mesh(new THREE.TorusGeometry(3.8, 0.32, 14, 70), sw2Mat);
+  shockwave2.rotation.x = Math.PI / 2;
+  shockwave2.visible = false;
+  group.add(shockwave2);
+
+  // Secondary blast sphere (delayed)
+  const blast2Mat = new THREE.MeshBasicMaterial({ color: 0xff8800, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  const blast2 = new THREE.Mesh(new THREE.SphereGeometry(3.6, 22, 22), blast2Mat);
+  blast2.visible = false;
+  group.add(blast2);
+
+  // Fire sprites
+  const fire = [];
+  for (let i = 0; i < 22; i++) {
+    const mat = new THREE.SpriteMaterial({ map: FIRE_TEXTURE, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+    const sprite = new THREE.Sprite(mat);
+    group.add(sprite);
+    fire.push({ sprite, seed: i * 0.41, drift: (i % 3 - 1) * (0.5 + i * 0.08) });
+  }
+
+  scene.add(group);
+  return { group, rings, light, smoke, blast, shockwave, shockwave2, blast2, fire, level: 0, active_anim: false, criticalStartMs: null, exploded: false, explosionStartMs: null, flashTriggered: false, forceExploded: false };
+}
+
+function triggerExplosionFlash() {
+  const el = document.getElementById('explosion-flash');
+  if (!el) return;
+  el.style.transition = 'none';
+  el.style.opacity = '1';
+  el.getBoundingClientRect(); // force reflow
+  el.style.transition = 'opacity 2.8s ease-out';
+  el.style.opacity = '0';
+}
+
+function triggerSceneShake(strength = 1, durationMs = 1400) {
+  const now = performance.now();
+  sceneShake.strength = Math.max(sceneShake.strength, strength);
+  sceneShake.until = Math.max(sceneShake.until, now + durationMs);
+}
+
+function setCriticalEffect(key, level) {
+  const ef = criticalEffects[key];
+  if (!ef) return;
+  const now = performance.now();
+  ef.level = level;
+  ef.group.visible = level > 0 || ef.exploded;
+
+  if (level >= 2) {
+    if (ef.criticalStartMs == null) ef.criticalStartMs = now;
+    if (!ef.exploded && (now - ef.criticalStartMs) >= 60000) {
+      ef.exploded = true;
+      ef.explosionStartMs = now;
+      ef.flashTriggered = false;
+      triggerSceneShake(2.5, 3500);
+      triggerExplosionFlash();
+    }
+  } else {
+    if (!ef.forceExploded) {
+      ef.criticalStartMs = null;
+      ef.exploded = false;
+      ef.explosionStartMs = null;
+      ef.flashTriggered = false;
+    }
+  }
+}
+
+function animateCriticalEffects(t) {
+  const now = performance.now();
+  Object.values(criticalEffects).forEach(ef => {
+    if (!ef.active_anim && !ef.exploded) {
+      ef.rings.forEach(({ mesh }) => { mesh.material.opacity = 0; });
+      ef.smoke?.forEach(({ sprite }) => { sprite.material.opacity = 0; });
+      ef.light.intensity = 0;
+      ef.blast.visible = false;
+      ef.shockwave.visible = false;
+      return;
+    }
+
+    const speed = ef.level >= 2 ? 0.9 : 0.5;
+    ef.rings.forEach(({ mesh, phase }) => {
+      const prog = ((t * speed + phase / (Math.PI * 2)) % 1 + 1) % 1;
+      mesh.scale.setScalar(1 + prog * (ef.level >= 2 ? 14 : 6));
+      mesh.material.opacity = ef.exploded ? 0 : (1 - prog) * (ef.level >= 2 ? 0.82 : 0.55);
+    });
+
+    const pulse = 0.5 + 0.5 * Math.sin(t * (ef.level >= 2 ? 5 : 3));
+    ef.light.intensity = ef.exploded ? (14 + 10 * pulse) : (ef.level >= 2 ? (4 + 8 * pulse) : (1.5 + 2.5 * pulse));
+    if (ef.exploded) {
+      ef.light.color.setRGB(1, 0.15, 0.05);
+    } else {
+      const g = Math.floor(40 + 80 * pulse);
+      ef.light.color.setRGB(1, g / 255, 0);
+    }
+
+    const smokeBaseOpacity = ef.exploded ? 0.96 : (ef.level >= 2 ? 0.78 : 0.46);
+    const rise = ef.exploded ? 36.0 : (ef.level >= 2 ? 20.0 : 12.0);
+    ef.smoke?.forEach(({ sprite, seed, drift }, idx) => {
+      const cyc = ((t * (ef.exploded ? 0.18 : (ef.level >= 2 ? 0.34 : 0.22)) + seed) % 1 + 1) % 1;
+      sprite.position.set(
+        Math.sin(t * 0.72 + seed) * drift * (ef.exploded ? 3.4 : 1.2),
+        2.2 + cyc * rise,
+        Math.cos(t * 0.50 + seed) * drift * (ef.exploded ? 2.8 : 1.0)
+      );
+      const sc = ef.exploded
+        ? (22.0 + cyc * 34.0 + idx * 0.22)
+        : ((ef.level >= 2 ? 10.0 : 6.0) + cyc * (ef.level >= 2 ? 14.0 : 8.0) + idx * 0.12);
+      sprite.scale.set(sc, sc, 1);
+      sprite.material.color.set(ef.exploded ? 0x2b2b2b : 0xd1d5db);
+      sprite.material.opacity = (1 - cyc) * smokeBaseOpacity;
+    });
+
+    if (ef.exploded && ef.explosionStartMs != null) {
+      const expT = Math.max(0, (now - ef.explosionStartMs) / 1000);
+      if (expT < 4.8) {
+        ef.blast.visible = true;
+        ef.shockwave.visible = true;
+
+        const blastProg = Math.min(expT / 2.1, 1);
+        ef.blast.scale.setScalar(1 + blastProg * 55);
+        ef.blast.material.opacity = (1 - blastProg) * 1.3;
+        ef.blast.material.color.set(expT < 0.2 ? 0xfffff0 : expT < 0.7 ? 0xff8c1f : 0xff3300);
+
+        const shockProg = Math.min(expT / 3.2, 1);
+        ef.shockwave.scale.setScalar(1 + shockProg * 70);
+        ef.shockwave.material.opacity = (1 - shockProg) * 1.0;
+
+        // Secondary blast (delayed 0.35s)
+        if (expT >= 0.35) {
+          const t2 = expT - 0.35;
+          ef.blast2.visible = t2 < 3.0;
+          if (ef.blast2.visible) {
+            const p2 = Math.min(t2 / 1.6, 1);
+            ef.blast2.scale.setScalar(1 + p2 * 28);
+            ef.blast2.material.opacity = (1 - p2) * 1.0;
+            ef.blast2.material.color.set(t2 < 0.25 ? 0xfffaaa : t2 < 0.8 ? 0xffaa22 : 0xff4400);
+          }
+        } else { ef.blast2.visible = false; }
+
+        // Second shockwave (delayed 0.6s)
+        if (expT >= 0.6) {
+          const t3 = expT - 0.6;
+          ef.shockwave2.visible = t3 < 3.8;
+          if (ef.shockwave2.visible) {
+            const p3 = Math.min(t3 / 2.5, 1);
+            ef.shockwave2.scale.setScalar(1 + p3 * 42);
+            ef.shockwave2.material.opacity = (1 - p3) * 0.9;
+          }
+        } else { ef.shockwave2.visible = false; }
+
+        // Fire sprites
+        ef.fire?.forEach(({ sprite, seed, drift }, idx) => {
+          if (expT < 6.0) {
+            const cyc = ((expT * 0.48 + seed) % 1 + 1) % 1;
+            sprite.position.set(
+              Math.sin(expT * 1.3 + seed) * drift * 2.8,
+              0.5 + cyc * 30.0 + Math.sin(seed * 4) * 2,
+              Math.cos(expT * 1.0 + seed) * drift * 2.4
+            );
+            const fade = Math.max(0, 1 - expT / 5.0);
+            const sc = (4.0 + cyc * 11.0 + idx * 0.25) * fade;
+            sprite.scale.set(sc, sc, 1);
+            sprite.material.opacity = (1 - cyc * 0.7) * 1.1 * fade;
+          } else {
+            sprite.material.opacity = 0;
+          }
+        });
+
+        if (expT < 2.2) {
+          triggerSceneShake(2.0, 200);
+        }
+      } else {
+        ef.blast.visible = false;
+        ef.shockwave.visible = false;
+        ef.shockwave2.visible = false;
+        ef.blast2.visible = false;
+        ef.fire?.forEach(({ sprite }) => { sprite.material.opacity = 0; });
+      }
+    } else {
+      ef.blast.visible = false;
+      ef.shockwave.visible = false;
+      ef.shockwave2.visible = false;
+      ef.blast2.visible = false;
+      ef.fire?.forEach(({ sprite }) => { sprite.material.opacity = 0; });
+    }
+  });
+}
+
+// ─── Alarme : animation de teinte sur le mesh du panneau ─────────────────────
+function animateWidgetAlarms(t) {
+  Object.entries(widgetObjects).forEach(([, w]) => {
+    if (!w.alarmMesh) return;
+    const ac = w.alarmClass;
+    if (ac === 'alarm-critical') {
+      const pulse = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * Math.PI / 0.19));
+      w.alarmMesh.material.color.setRGB(1, 0.25 + 0.35 * pulse, 0);
+      w.alarmMesh.material.opacity = 0.45 * pulse;
+    } else if (ac === 'alarm-active') {
+      const pulse = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * Math.PI / 0.325));
+      w.alarmMesh.material.color.setRGB(1, 0.45 + 0.35 * pulse, 0.1);
+      w.alarmMesh.material.opacity = 0.28 * pulse;
+    } else {
+      w.alarmMesh.material.opacity = 0;
+    }
+  });
+}
+
+// ─── LocalStorage positions ───────────────────────────────────────────────────
+function loadPositions() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; }
+}
+function savePositions() {
+  const pos = {};
+  Object.entries(widgetObjects).forEach(([k, w]) => {
+    pos[k] = { x: w.mesh.position.x, y: w.mesh.position.y, z: w.mesh.position.z };
+  });
+  localStorage.setItem(LS_KEY, JSON.stringify(pos));
+}
+
+// ─── Construction panneaux 3D après chargement du modèle ─────────────────────
+let panelW, panelH;
+
+function buildWidgets(bbox) {
+  const min  = bbox.min;
+  const sz   = bbox.getSize(new THREE.Vector3());
+  const savedPos = loadPositions();
+
+  panelW = Math.max(sz.x, sz.z) * 0.045;
+  panelH = panelW * 0.34;
+
+  WIDGET_DEFS.forEach(def => {
+    const anchorPos = new THREE.Vector3(
+      min.x + def.xFrac * sz.x,
+      min.y + def.yFrac * sz.y,
+      min.z + def.zFrac * sz.z
+    );
+    const stemHeight = Math.max(panelH * 1.4, (def.stemHeightFrac || 0.1) * sz.y);
+    const defaultPos = anchorPos.clone();
+    defaultPos.y += stemHeight + panelH * 0.5;
+
+    const sp = savedPos[def.key];
+    const pos = sp ? new THREE.Vector3(sp.x, sp.y, sp.z) : defaultPos;
+
+    const canvas = document.createElement('canvas');
+    canvas.width  = CWIDTH;
+    canvas.height = CHEIGHT;
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+
+    const geo = new THREE.PlaneGeometry(panelW, panelH);
+    const mat = new THREE.MeshBasicMaterial({
+      map: texture,
+      transparent: true,
+      side: THREE.FrontSide,
+      depthWrite: false,
+      alphaTest: 0.02
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(pos);
+    mesh.userData.widgetKey = def.key;
+    mesh.rotation.set(0, 0, 0);
+    scene.add(mesh);
+    widgetMeshes.push(mesh);
+
+    const alarmGeo = new THREE.PlaneGeometry(panelW + panelW * 0.08, panelH + panelH * 0.08);
+    const alarmMat = new THREE.MeshBasicMaterial({
+      color: 0xff6600,
+      transparent: true,
+      opacity: 0,
+      side: THREE.FrontSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    const alarmMesh = new THREE.Mesh(alarmGeo, alarmMat);
+    alarmMesh.position.z = -0.01;
+    mesh.add(alarmMesh);
+
+    const stemTopY = pos.y - panelH / 2;
+    const lp1 = new THREE.Vector3(anchorPos.x, anchorPos.y, anchorPos.z);
+    const lp2 = new THREE.Vector3(pos.x, stemTopY, pos.z);
+    const lineGeo = new THREE.BufferGeometry().setFromPoints([lp1, lp2]);
+    const lineMat = new THREE.LineBasicMaterial({
+      color: 0x7c8da3,
+      transparent: true,
+      opacity: 0.04
+    });
+    const line = new THREE.Line(lineGeo, lineMat);
+    scene.add(line);
+
+    const widgetData = {
+      mesh, alarmMesh, canvas, texture,
+      ctx: canvas.getContext('2d'),
+      cw: CWIDTH, ch: CHEIGHT,
+      label: def.label,
+      colorKey: 'gray',
+      statusText: '--',
+      valHtml: '',
+      alarmClass: '',
+      isEditMode: false,
+      line, anchorPos: anchorPos.clone()
+    };
+    widgetObjects[def.key] = widgetData;
+    redrawWidget(def.key);
+  });
+
+  ['tx1', 'tx2'].forEach(key => {
+    const w = widgetObjects[key];
+    if (!w) return;
+    const def = WIDGET_DEFS.find(d => d.key === key);
+    const ef = createCriticalEffect();
+    ef.group.position.set(
+      w.mesh.position.x,
+      min.y + (def.yFrac - 0.04) * sz.y,
+      w.mesh.position.z
+    );
+    criticalEffects[key] = ef;
+  });
+}
+
+// ─── Mode édition ─────────────────────────────────────────────────────────────
+let editMode = false;
+
+const editToggleBtn = document.getElementById('edit-toggle');
+const editHint      = document.getElementById('edit-hint');
+const resetPosBtn   = document.getElementById('reset-pos');
+
+editToggleBtn.addEventListener('click', () => {
+  editMode = !editMode;
+  editToggleBtn.classList.toggle('active', editMode);
+  editHint.style.display  = editMode ? 'block' : 'none';
+  resetPosBtn.style.display = editMode ? 'block' : 'none';
+  Object.entries(widgetObjects).forEach(([key, w]) => {
+    w.isEditMode = editMode;
+    redrawWidget(key);
+  });
+  renderer.domElement.style.cursor = editMode ? 'crosshair' : 'default';
+});
+
+resetPosBtn.addEventListener('click', () => {
+  localStorage.removeItem(LS_KEY);
+  location.reload();
+});
+
+// ─── Drag système ──────────────────────────────────────────────────────────────
+const dragState  = { active: false, key: null, mesh: null };
+const dragPlane  = new THREE.Plane();
+const dragRay    = new THREE.Raycaster();
+const dragMouse  = new THREE.Vector2();
+const dragTarget = new THREE.Vector3();
+
+renderer.domElement.addEventListener('mousedown', (ev) => {
+  if (!editMode) return;
+  const rect = container.getBoundingClientRect();
+  dragMouse.x =  ((ev.clientX - rect.left) / rect.width)  * 2 - 1;
+  dragMouse.y = -((ev.clientY - rect.top)  / rect.height) * 2 + 1;
+  dragRay.setFromCamera(dragMouse, camera);
+  const hits = dragRay.intersectObjects(widgetMeshes);
+  if (hits.length > 0) {
+    const hitMesh = hits[0].object;
+    const key = hitMesh.userData.widgetKey;
+    dragState.active = true;
+    dragState.key    = key;
+    dragState.mesh   = hitMesh;
+    dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), hitMesh.position);
+    controls.enabled = false;
+    renderer.domElement.style.cursor = 'grabbing';
+    ev.stopPropagation();
+    ev.preventDefault();
+  }
+});
+
+document.addEventListener('mousemove', (ev) => {
+  if (!dragState.active) return;
+  const rect = container.getBoundingClientRect();
+  dragMouse.x =  ((ev.clientX - rect.left) / rect.width)  * 2 - 1;
+  dragMouse.y = -((ev.clientY - rect.top)  / rect.height) * 2 + 1;
+  dragRay.setFromCamera(dragMouse, camera);
+  if (dragRay.ray.intersectPlane(dragPlane, dragTarget)) {
+    dragState.mesh.position.x = dragTarget.x;
+    dragState.mesh.position.z = dragTarget.z;
+
+    const ef = criticalEffects[dragState.key];
+    if (ef) { ef.group.position.x = dragTarget.x; ef.group.position.z = dragTarget.z; }
+
+    const w = widgetObjects[dragState.key];
+    if (w && w.line) {
+      const pos = w.mesh.position;
+      const pts = [
+        w.anchorPos.clone(),
+        new THREE.Vector3(pos.x, pos.y - panelH / 2, pos.z)
+      ];
+      w.line.geometry.setFromPoints(pts);
+    }
+  }
+});
+
+document.addEventListener('mouseup', () => {
+  if (!dragState.active) return;
+  dragState.active = false;
+  controls.enabled = true;
+  renderer.domElement.style.cursor = editMode ? 'crosshair' : 'default';
+  savePositions();
+});
+
+renderer.domElement.addEventListener('mousemove', (ev) => {
+  if (!editMode || dragState.active) return;
+  const rect = container.getBoundingClientRect();
+  const mx =  ((ev.clientX - rect.left) / rect.width)  * 2 - 1;
+  const my = -((ev.clientY - rect.top)  / rect.height) * 2 + 1;
+  dragRay.setFromCamera(new THREE.Vector2(mx, my), camera);
+  const hits = dragRay.intersectObjects(widgetMeshes);
+  renderer.domElement.style.cursor = hits.length > 0 ? 'grab' : 'crosshair';
+});
+
+// ─── Chargement modèle DAE ────────────────────────────────────────────────────
+const loadingEl   = document.getElementById('loading');
+const loadingText = document.getElementById('loading-text');
+const loadingBar  = document.getElementById('loading-bar');
+
+const loader = new ColladaLoader();
+loader.load(
+  '/static/assets/extracted/electrical_substation/model.dae',
+  (collada) => {
+    const model = collada.scene;
+    model.traverse((node) => {
+      if (node.isMesh) {
+        node.castShadow = false;
+        node.receiveShadow = false;
+        if (node.material) {
+          const mats = Array.isArray(node.material) ? node.material : [node.material];
+          mats.forEach(m => {
+            m.depthWrite = true;
+            if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
+            if (m.color) {
+              const hsl = {};
+              m.color.getHSL(hsl);
+              m.color.setHSL(hsl.h, Math.min(hsl.s, 0.38), Math.max(0.30, Math.min(hsl.l > 0.58 ? 0.54 : hsl.l, 0.68)));
+            }
+            if ('roughness' in m) m.roughness = 0.82;
+            if ('metalness' in m) m.metalness = 0.12;
+          });
+        }
+      }
+    });
+    scene.add(model);
+
+    const box    = new THREE.Box3().setFromObject(model);
+    const center = box.getCenter(new THREE.Vector3());
+    const sz     = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(sz.x, sz.y, sz.z);
+    const dist   = Math.abs(maxDim / (2 * Math.tan(camera.fov * Math.PI / 360))) * 1.5;
+
+    controls.target.copy(center);
+    camera.position.set(center.x + dist * 0.62, center.y + dist * 0.38, center.z + dist * 0.82);
+    camera.lookAt(center);
+    controls.minDistance = Math.max(10, maxDim * 0.04);
+    controls.maxDistance = maxDim * 2.6;
+    controls.update();
+
+    sun.shadow.camera.left   = -maxDim * 0.7;
+    sun.shadow.camera.right  =  maxDim * 0.7;
+    sun.shadow.camera.top    =  maxDim * 0.7;
+    sun.shadow.camera.bottom = -maxDim * 0.7;
+    sun.shadow.camera.far    = dist * 2.5;
+    sun.shadow.camera.updateProjectionMatrix();
+
+    buildWidgets(box);
+    loadingEl.style.display = 'none';
+  },
+  (xhr) => {
+    if (xhr.lengthComputable) {
+      const pct = Math.round((xhr.loaded / xhr.total) * 100);
+      loadingBar.style.width = pct + '%';
+      loadingText.textContent = `Chargement modèle DAE… ${pct}%`;
+    } else {
+      loadingText.textContent = `Chargement modèle DAE… ${(xhr.loaded / 1048576).toFixed(1)} MB`;
+      loadingBar.style.width = '65%';
+    }
+  },
+  (err) => {
+    console.error('Erreur DAE :', err);
+    loadingText.textContent = 'Erreur de chargement du modèle 3D';
+    loadingText.style.color = '#f87171';
+    loadingBar.style.background = '#f87171';
+    loadingBar.style.width = '100%';
+  }
+);
+
+// ─── Boucle de rendu ──────────────────────────────────────────────────────────
+let t = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  baseCameraOffset.copy(camera.position);
+  t += 0.016;
+  animateCriticalEffects(t);
+  animateWidgetAlarms(t);
+
+  const now = performance.now();
+  if (sceneShake.until > now) {
+    const amp = sceneShake.strength * (0.35 + 2.8 * ((sceneShake.until - now) / 1700));
+    const jitterX = (Math.random() - 0.5) * amp;
+    const jitterY = (Math.random() - 0.5) * amp * 0.65;
+    const jitterZ = (Math.random() - 0.5) * amp;
+    camera.position.addVectors(baseCameraOffset, new THREE.Vector3(jitterX, jitterY, jitterZ));
+  } else {
+    sceneShake.strength = 0;
+    camera.position.copy(baseCameraOffset);
+  }
+
+  renderer.render(scene, camera);
+}
+animate();
+
+// ─── Helpers sidebar ──────────────────────────────────────────────────────────
+const $ = (id) => document.getElementById(id);
+
+function fmtBreaker(el, closed) {
+  if (closed == null) { el.textContent = '--'; el.className = 'brk open'; return; }
+  el.textContent = closed ? 'FERMÉ' : 'OUVERT';
+  el.className = closed ? 'brk closed' : 'brk open';
+}
+function fmtAlarm(el, active) {
+  el.textContent = active ? 'ALARME' : 'OK';
+  el.className = active ? 'alm on' : 'alm off';
+}
+function setMetric(id, value, unit, cls) {
+  const el = $(id); if (!el) return;
+  el.textContent = value != null ? `${value} ${unit}` : `-- ${unit}`;
+  el.className = 'mv ' + (cls || 'ok');
+}
+
+// ─── Mise à jour widgets 3D ───────────────────────────────────────────────────
+function setWidgetState(key, colorKey, statusText, valHtml, alarmClass) {
+  const w = widgetObjects[key];
+  if (!w) return;
+  w.colorKey   = colorKey;
+  w.statusText = statusText;
+  w.valHtml    = valHtml || '';
+  w.alarmClass = alarmClass || '';
+  redrawWidget(key);
+}
+
+function updateWidgets(d) {
+  if (!Object.keys(widgetObjects).length) return;
+  const br  = d.breakers     || {};
+  const tx1 = d.transformer1 || {};
+  const tx2 = d.transformer2 || {};
+  const f1  = d.feeder1      || {};
+  const f2  = d.feeder2      || {};
+  const bus = d.busbar       || {};
+
+  setWidgetState('main_cb',
+    br.main_cb == null ? 'gray' : br.main_cb ? 'green' : 'red',
+    br.main_cb == null ? '--'   : br.main_cb ? 'FERMÉ' : 'OUVERT',
+    '', '');
+
+  setWidgetState('busbar',
+    bus.live == null ? 'gray' : bus.live ? 'green' : 'red',
+    bus.live == null ? '--' : bus.live ? 'TENSION' : 'HORS TENS.',
+    bus.voltage != null ? `<b class="ok">${bus.voltage.toFixed(1)} kV</b>` : '', '');
+
+  const tx1Crit  = !!tx1.alarm_critical;
+  const tx1Alarm = !!(tx1.alarm_high || tx1.alarm_critical);
+  const tx1Oil   = tx1.oil_temp;
+  const tx1OilCls = tx1Oil > 95 ? 'crit' : tx1Oil > 80 ? 'warn' : 'ok';
+  setWidgetState('tx1',
+    tx1Crit ? 'orange' : tx1Alarm ? 'orange' : (br.tx1_cb == null ? 'gray' : br.tx1_cb ? 'green' : 'red'),
+    tx1Crit ? '⚠ CRITIQUE' : tx1Alarm ? '⚠ ALARME' : (br.tx1_cb == null ? '--' : br.tx1_cb ? 'FERMÉ' : 'OUVERT'),
+    tx1Oil != null ? `<span class="${tx1OilCls}">Huile: ${tx1Oil.toFixed(0)}°C</span>` : '',
+    tx1Crit ? 'alarm-critical' : tx1Alarm ? 'alarm-active' : '');
+  setCriticalEffect('tx1', tx1Crit ? 2 : tx1Alarm ? 1 : 0);
+  if (criticalEffects['tx1']) criticalEffects['tx1'].active_anim = tx1Alarm;
+
+  const tx2Crit  = !!tx2.alarm_critical;
+  const tx2Alarm = !!(tx2.alarm_high || tx2.alarm_critical);
+  const tx2Oil   = tx2.oil_temp;
+  const tx2OilCls = tx2Oil > 95 ? 'crit' : tx2Oil > 80 ? 'warn' : 'ok';
+  setWidgetState('tx2',
+    tx2Crit ? 'orange' : tx2Alarm ? 'orange' : (br.tx2_cb == null ? 'gray' : br.tx2_cb ? 'green' : 'red'),
+    tx2Crit ? '⚠ CRITIQUE' : tx2Alarm ? '⚠ ALARME' : (br.tx2_cb == null ? '--' : br.tx2_cb ? 'FERMÉ' : 'OUVERT'),
+    tx2Oil != null ? `<span class="${tx2OilCls}">Huile: ${tx2Oil.toFixed(0)}°C</span>` : '',
+    tx2Crit ? 'alarm-critical' : tx2Alarm ? 'alarm-active' : '');
+  setCriticalEffect('tx2', tx2Crit ? 2 : tx2Alarm ? 1 : 0);
+  if (criticalEffects['tx2']) criticalEffects['tx2'].active_anim = tx2Alarm;
+
+  const f1Alarm = !!(f1.alarm_overload || f1.alarm_imbalance || f1.alarm_incoherence);
+  setWidgetState('feeder1',
+    f1Alarm ? 'orange' : (br.feeder1_cb == null ? 'gray' : br.feeder1_cb ? 'green' : 'red'),
+    f1Alarm ? '⚠ ALARME' : (br.feeder1_cb == null ? '--' : br.feeder1_cb ? 'FERMÉ' : 'OUVERT'),
+    f1.imax != null ? `<span class="ok">Imax: ${f1.imax.toFixed(0)} A</span>` : (f1.imoy != null ? `<span class="ok">Imoy: ${f1.imoy.toFixed(0)} A</span>` : ''),
+    f1Alarm ? 'alarm-active' : '');
+  if (criticalEffects['feeder1']) criticalEffects['feeder1'].active_anim = f1Alarm;
+  setCriticalEffect('feeder1', f1Alarm ? 1 : 0);
+
+  const f2Alarm = !!(f2.alarm_overload || f2.alarm_imbalance || f2.alarm_incoherence);
+  setWidgetState('feeder2',
+    f2Alarm ? 'orange' : (br.feeder2_cb == null ? 'gray' : br.feeder2_cb ? 'green' : 'red'),
+    f2Alarm ? '⚠ ALARME' : (br.feeder2_cb == null ? '--' : br.feeder2_cb ? 'FERMÉ' : 'OUVERT'),
+    f2.imax != null ? `<span class="ok">Imax: ${f2.imax.toFixed(0)} A</span>` : (f2.imoy != null ? `<span class="ok">Imoy: ${f2.imoy.toFixed(0)} A</span>` : ''),
+    f2Alarm ? 'alarm-active' : '');
+  if (criticalEffects['feeder2']) criticalEffects['feeder2'].active_anim = f2Alarm;
+  setCriticalEffect('feeder2', f2Alarm ? 1 : 0);
+}
+
+// ─── Mise à jour UI complète ───────────────────────────────────────────────────
+function updateUI(d) {
+  const badge = $('mode-badge');
+  const dot   = $('conn-dot');
+  const lbl   = $('conn-label');
+
+  if (d.connected) {
+    if (d.stale) {
+      badge.textContent = '⚠ DONNÉES GELÉES'; badge.className = 'simulation';
+      dot.className = 'dot warn'; lbl.textContent = 'Données gelées';
+    } else {
+      badge.textContent = '● LIVE'; badge.className = 'live';
+      dot.className = 'dot ok'; lbl.textContent = 'PLC connecté';
+    }
+  } else {
+    badge.textContent = '● MODE SIMULATION'; badge.className = 'simulation';
+    dot.className = 'dot warn'; lbl.textContent = 'Mode simulation';
+  }
+
+  if (d.timestamp) $('timestamp').textContent = new Date(d.timestamp).toLocaleTimeString('fr-FR');
+
+  const g = d.grid || {};
+  const freqOk = g.frequency != null && Math.abs(g.frequency - 50) < 0.5;
+  setMetric('s-freq',  g.frequency  != null ? g.frequency.toFixed(2)  : null, 'Hz', freqOk ? 'ok' : 'warn');
+  setMetric('s-busv',  d.busbar?.voltage != null ? d.busbar.voltage.toFixed(1) : null, 'kV');
+  setMetric('s-linev', g.voltage    != null ? g.voltage.toFixed(1)    : null, 'kV');
+  setMetric('s-linei', g.current    != null ? g.current.toFixed(0)    : null, 'A');
+  setMetric('s-linep', g.power      != null ? g.power.toFixed(2)      : null, 'MW');
+
+  const br = d.breakers || {};
+  fmtBreaker($('s-cb'),     br.main_cb);
+  fmtBreaker($('s-dsline'), br.line_ds);
+  fmtBreaker($('s-dsbus'),  br.bus_ds);
+  const busLive = d.busbar?.live;
+  $('s-busbar').textContent = busLive == null ? '--' : busLive ? 'SOUS TENSION' : 'HORS TENSION';
+  $('s-busbar').className   = 'mv ' + (busLive ? 'ok' : busLive === false ? 'crit' : 'neutral');
+
+  const tx1 = d.transformer1 || {};
+  const tx2 = d.transformer2 || {};
+  fmtBreaker($('s-tx1cb'), br.tx1_cb);
+  setMetric('s-tx1v',    tx1.output_voltage != null ? tx1.output_voltage.toFixed(1) : null, 'kV');
+  setMetric('s-tx1oil',  tx1.oil_temp       != null ? tx1.oil_temp.toFixed(1)       : null, '°C', tx1.oil_temp > 95 ? 'crit' : tx1.oil_temp > 80 ? 'warn' : 'ok');
+  setMetric('s-tx1wind', tx1.winding_temp   != null ? tx1.winding_temp.toFixed(1)   : null, '°C', tx1.winding_temp > 115 ? 'crit' : tx1.winding_temp > 100 ? 'warn' : 'ok');
+  fmtAlarm($('s-tx1alm'), tx1.alarm_high || tx1.alarm_critical);
+
+  fmtBreaker($('s-tx2cb'), br.tx2_cb);
+  setMetric('s-tx2v',    tx2.output_voltage != null ? tx2.output_voltage.toFixed(1) : null, 'kV');
+  setMetric('s-tx2oil',  tx2.oil_temp       != null ? tx2.oil_temp.toFixed(1)       : null, '°C', tx2.oil_temp > 95 ? 'crit' : tx2.oil_temp > 80 ? 'warn' : 'ok');
+  setMetric('s-tx2wind', tx2.winding_temp   != null ? tx2.winding_temp.toFixed(1)   : null, '°C', tx2.winding_temp > 115 ? 'crit' : tx2.winding_temp > 100 ? 'warn' : 'ok');
+  fmtAlarm($('s-tx2alm'), tx2.alarm_high || tx2.alarm_critical);
+
+  const f1 = d.feeder1 || {};
+  const f2 = d.feeder2 || {};
+  fmtBreaker($('s-f1cb'), br.feeder1_cb);
+  $('s-f1i').textContent = f1.i1 != null ? `${f1.i1.toFixed(0)} / ${f1.i2.toFixed(0)} / ${f1.i3.toFixed(0)} A` : '-- / -- / -- A';
+  setMetric('s-f1unb', f1.unbalance != null ? f1.unbalance.toFixed(1) : null, '%', f1.unbalance > 10 ? 'crit' : f1.unbalance > 5 ? 'warn' : 'ok');
+  fmtAlarm($('s-f1alm'), f1.alarm_overload || f1.alarm_imbalance || f1.alarm_incoherence);
+
+  fmtBreaker($('s-f2cb'), br.feeder2_cb);
+  $('s-f2i').textContent = f2.i1 != null ? `${f2.i1.toFixed(0)} / ${f2.i2.toFixed(0)} / ${f2.i3.toFixed(0)} A` : '-- / -- / -- A';
+  setMetric('s-f2unb', f2.unbalance != null ? f2.unbalance.toFixed(1) : null, '%', f2.unbalance > 10 ? 'crit' : f2.unbalance > 5 ? 'warn' : 'ok');
+  fmtAlarm($('s-f2alm'), f2.alarm_overload || f2.alarm_imbalance || f2.alarm_incoherence);
+
+  updateWidgets(d);
+}
+
+// ─── WebSocket avec auto-reconnexion ─────────────────────────────────────────
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}/ws`);
+  ws.onopen    = () => console.log('[WS] connecté');
+  ws.onmessage = (ev) => { try { updateUI(JSON.parse(ev.data)); } catch(e) { console.warn('[WS] parse error', e); } };
+  ws.onclose   = () => {
+    console.log('[WS] fermé, reconnexion dans 3s');
+    $('mode-badge').textContent = '● RECONNEXION…';
+    $('mode-badge').className = 'disconnected';
+    setTimeout(connectWS, 3000);
+  };
+  ws.onerror = (e) => console.warn('[WS] erreur', e);
+}
+connectWS();
+
+// ─── Touche X — explosion immédiate TX2 ───────────────────────────────────────
+document.addEventListener('keydown', (ev) => {
+  if (ev.key !== 'x' && ev.key !== 'X') return;
+  const ef = criticalEffects['tx2'];
+  if (!ef || ef.exploded) return;
+  ef.forceExploded = true;
+  ef.level = 2;
+  ef.active_anim = true;
+  ef.exploded = true;
+  ef.explosionStartMs = performance.now();
+  ef.flashTriggered = false;
+  ef.group.visible = true;
+  triggerSceneShake(2.5, 3500);
+  triggerExplosionFlash();
+});
+</script>
+</body>
+</html>

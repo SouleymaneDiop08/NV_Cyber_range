@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SectorName {
+  dispatching_electrique
+  raffinerie
+  systeme_ferroviaire
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  GUEST
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  DISABLED
+}
+
+enum AccessLevel {
+  FULL
+  VIEW_ONLY
+}
+
+enum ServiceCategory {
+  WORKSTATION
+  ATTACKER
+  SUPERVISION
+  AUTOMATE
+  TERRAIN
+}
+
+enum LabStatus {
+  CREATING
+  STOPPED
+  STARTING
+  RUNNING
+  STOPPING
+  PAUSED
+  ERROR
+}
+
+model Sector {
+  id       String  @id @default(uuid())
+  name     SectorName @unique
+  label    String
+  // Nom du template de labo Docker Compose associé (ex. "dispatching"),
+  // consommé par cyber-range-orchestrator (GET /templates/:template/services).
+  // Texte libre (pas d'enum) comme Service.ssoTarget : un nouveau
+  // secteur/template ne doit pas nécessiter de migration. `null` = pas encore
+  // de labo configuré pour ce secteur.
+  templateName String? @map("template_name")
+
+  services Service[]
+  users    User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sectors")
+}
+
+model Service {
+  id          String          @id @default(uuid())
+  sectorId    String          @map("sector_id")
+  sector      Sector          @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  // Composant du template Docker Compose du secteur (ex. "scada-station-a") —
+  // remplace l'ancienne launchUrl statique. L'URL réelle est calculée
+  // dynamiquement au lancement à partir du labo de l'utilisateur courant (cf.
+  // LabsService.getLaunchUrlForUser côté backend), jamais stockée ici.
+  labComponent String         @map("lab_component")
+  enabled     Boolean         @default(true)
+  accessLevel AccessLevel     @map("access_level")
+  category    ServiceCategory?
+  // Identifie un service intégré en SSO via Keycloak (ex. "FUXA"). null = lancement direct.
+  // Pas d'enum : un nouveau service SSO ne doit pas nécessiter de migration.
+  ssoTarget   String?         @map("sso_target")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sectorId])
+  @@map("services")
+}
+
+model User {
+  id               String     @id @default(uuid())
+  email            String     @unique
+  firstName        String?    @map("first_name")
+  lastName         String?    @map("last_name")
+  passwordHash     String?    @map("password_hash")
+  role             Role
+  sectorId         String?    @map("sector_id")
+  sector           Sector?    @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+  createdById      String?    @map("created_by")
+  createdBy        User?      @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdUsers     User[]     @relation("UserCreatedBy")
+  status           UserStatus @default(INVITED)
+  totpSecretEnc    String?    @map("totp_secret_enc")
+  totpActivatedAt  DateTime?  @map("totp_activated_at")
+
+  activationTokens ActivationToken[]
+  passwordResetTokens PasswordResetToken[]
+  recoveryCodes    RecoveryCode[]
+  auditLogs        AuditLog[]
+  // Un labo par ADMIN (pas par secteur — un secteur peut avoir plusieurs ADMIN, chacun
+  // son labo indépendant). Toujours nul pour SUPERADMIN/GUEST.
+  lab              Lab?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sectorId])
+  @@index([createdById])
+  @@map("users")
+}
+
+// Instance de labo Cyber Range (Docker Compose, via le middleware cyber-range-orchestrator).
+// Le portail ne parle jamais directement à Docker : ce modèle ne fait que suivre
+// l'état côté plateforme (cache, cf. LabsService.getStatusForAdmin) et l'identifiant de
+// labo (`namespace` — nom conservé tel quel malgré le passage de Kubernetes à Docker
+// Compose, cf. plan de migration ; sert de Project Name Compose côté orchestrateur).
+// `onDelete: SetNull` est un filet de sécurité DB uniquement — la suppression réelle (et
+// le teardown Compose) est gérée en code applicatif dans UsersService.remove, même
+// convention que la cascade ADMIN -> GUEST déjà en place.
+model Lab {
+  id        String    @id @default(uuid())
+  ownerId   String?   @unique @map("owner_id")
+  owner     User?     @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  namespace String    @unique
+  status    LabStatus @default(CREATING)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([ownerId])
+  @@map("labs")
+}
+
+model ActivationToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("activation_tokens")
+}
+
+// Réinitialisation de mot de passe en libre-service. Même forme que
+// ActivationToken (opaque, haché, usage unique) mais durée de vie bien plus
+// courte : ce lien redonne l'accès à un compte déjà actif, alors qu'une
+// invitation ne fait qu'ouvrir un compte encore vide.
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model RecoveryCode {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String    @map("code_hash")
+  usedAt    DateTime? @map("used_at")
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("recovery_codes")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("audit_logs")
+}

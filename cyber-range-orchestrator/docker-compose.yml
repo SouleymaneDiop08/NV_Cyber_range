@@ -1,0 +1,122 @@
+name: cyber_range_orchestrator
+
+# =============================================================================
+# Deux rôles depuis la MÊME image (cf. src/orchestrator-mode.ts) :
+#
+#   control  — pilote Docker (socket de l'hôte monté), expose l'API de contrôle
+#              token-protégée. AUCUN port publié : seul le portail l'appelle,
+#              par le réseau interne.
+#   gateway  — seule surface publique (proxy /apps/*). AUCUN socket Docker,
+#              état des labos en lecture seule, ignore jusqu'au token de service.
+#
+# Les séparer supprime le cumul « socket Docker de l'hôte + surface HTTP
+# publique » dans un même processus : une RCE dans la chaîne de proxy ne donne
+# plus un accès équivalent root sur l'hôte.
+# =============================================================================
+
+x-orchestrator-base: &orchestrator-base
+  build:
+    context: .
+    # network: host — le DNS du bridge Docker par défaut est indisponible AU
+    # BUILD dans cet environnement (cf. CLAUDE.md) : sans ça, `apk add` échoue.
+    network: host
+  env_file:
+    - .env
+  restart: unless-stopped
+  # Pertinent ici (contrairement au conteneur d'un labo, qui exige les
+  # privilèges de montage de son démon interne) : ce processus n'a besoin
+  # d'aucune élévation.
+  security_opt:
+    - no-new-privileges:true
+  read_only: true
+  tmpfs:
+    - /tmp
+
+services:
+  control:
+    <<: *orchestrator-base
+    container_name: cyber_range_orchestrator_control
+    environment:
+      ORCHESTRATOR_MODE: control
+    # Pas de `ports:` — volontaire. Le plan de contrôle n'est joignable que
+    # depuis le réseau du portail, jamais depuis l'extérieur de l'hôte.
+    volumes:
+      # Socket Docker de l'hôte : ce conteneur crée/pilote les conteneurs DinD
+      # des labos (run/start/stop/pause/rm), cf. DindComposeDriver. C'est un
+      # accès équivalent root sur l'hôte — d'où l'absence de port publié.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Métadonnées des templates en lecture seule : uniquement
+      # `<template>/lab-template.json` + `lab-components.json`. L'image de labo
+      # est auto-suffisante (elle embarque le compose et les images), donc
+      # aucun bind mount du code des labos n'est nécessaire.
+      # ${TEMPLATES_HOST_DIR} = dossier hôte contenant les templates.
+      - "${TEMPLATES_HOST_DIR}:${TEMPLATES_DIR}:ro"
+      - orchestrator_data:/data
+    networks:
+      # Réseau du portail : c'est par là que le backend talixman-auth appelle
+      # l'API de contrôle.
+      portal_network:
+      # Réseau des labos : nécessaire pour y attacher les conteneurs de labo
+      # (`docker run --network`) et les inspecter.
+      labs_network:
+
+  gateway:
+    <<: *orchestrator-base
+    container_name: cyber_range_orchestrator_gateway
+    environment:
+      ORCHESTRATOR_MODE: gateway
+      # Neutralise la clé héritée de `env_file` : la gateway ne crée aucun labo
+      # et n'a donc rien à signer. Comme c'est la SEULE surface publique, lui
+      # laisser la clé maîtresse transformerait une compromission du proxy en
+      # capacité de forger un jeton pour n'importe quel labo.
+      LAB_SSO_MASTER_KEY: ""
+    ports:
+      - "${PORT:-4100}:4100"
+      # Plage des points d'entrée des composants de labo : une origine par
+      # composant (cf. ingress/port-ingress.ts). Indispensable — les
+      # applications du labo (FUXA, OpenPLC, viewer 3D) construisent leurs URLs
+      # à la racine et ne peuvent donc pas être servies sous un préfixe de
+      # chemin. Doit couvrir LAB_INGRESS_PORT_MIN..MAX.
+      - "${LAB_INGRESS_PORT_MIN:-20000}-${LAB_INGRESS_PORT_MAX:-20099}:${LAB_INGRESS_PORT_MIN:-20000}-${LAB_INGRESS_PORT_MAX:-20099}"
+    volumes:
+      # Aucun socket Docker ici — c'est tout l'intérêt de la séparation.
+      - "${TEMPLATES_HOST_DIR}:${TEMPLATES_DIR}:ro"
+      # État des labos en LECTURE SEULE : la gateway ne fait que résoudre
+      # (labId, composant) -> cible interne, elle n'écrit jamais.
+      - orchestrator_data:/data:ro
+    networks:
+      # Réseau des labos : la gateway doit résoudre `<labId>` par DNS pour
+      # proxifier vers le bon conteneur de labo.
+      labs_network:
+      # Réseau d'entrée, non `internal`. Indispensable : Docker ne peut pas
+      # publier de port pour un conteneur attaché UNIQUEMENT à un réseau
+      # `internal` (le binding est enregistré mais aucune règle DNAT n'est
+      # créée). Ce réseau ne porte que la gateway — elle reste donc hors du
+      # réseau du portail, et les labos hors de celui-ci.
+      ingress_network:
+
+volumes:
+  orchestrator_data:
+
+networks:
+  # Réseau du portail (créé par talixman-auth). Il porte Postgres, Redis et
+  # Keycloak : AUCUN labo ne doit y être attaché.
+  portal_network:
+    external: true
+    name: talixman-auth_default
+
+  # Réseau dédié aux labos, créé ici. `internal: true` : pas de route vers
+  # l'extérieur, donc un labo compromis n'a aucun accès sortant Internet — et
+  # comme aucun service du portail n'y est attaché, il ne peut pas non plus
+  # joindre la base de données de la plateforme.
+  # Les images du labo étant préchargées dans son image, l'absence de sortie
+  # réseau ne gêne pas son démarrage.
+  labs_network:
+    name: ${LABS_NETWORK:-talixman_labs}
+    internal: true
+
+  # Entrée publique de la gateway uniquement (cf. ci-dessus). Volontairement
+  # distinct du réseau du portail : la gateway n'a aucune raison de joindre
+  # Postgres, Redis ou Keycloak.
+  ingress_network:
+    name: ${INGRESS_NETWORK:-talixman_gateway_ingress}

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "1",
+    "username": "admin",
+    "password": "$2a$10$rrFMD60gG9SNCL3.JTmqJOIvUrkE1ImqtZkAvfc6i1ija.XUZx1Ie",
+    "role": "admin",
+    "displayName": "Administrateur"
+  },
+  {
+    "id": "2",
+    "username": "superadmin",
+    "password": "$2a$10$F/FY6tBq4.5MXs1ETUeIS.rS9o82WU5RSrZPP.MlJPrAK8QJD7Swa",
+    "role": "superadmin",
+    "displayName": "Super Administrateur"
+  }
+]

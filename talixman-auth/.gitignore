@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+coverage/
+
+.env
+.env.*
+!.env.example
+
+# Secrets générés localement (QR TOTP du superadmin, etc.)
+backend/*.png
+backend/superadmin-totp-qr.png
+
+*.log
+.DS_Store

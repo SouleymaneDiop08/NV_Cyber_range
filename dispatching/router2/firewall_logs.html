@@ -1,0 +1,936 @@
+{% extends "base.html" %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  /* Charts Container */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .chart-card {
+    background: var(--cyber-bg-card);
+    border: 1px solid var(--cyber-border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    position: relative;
+  }
+
+  .chart-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--cyber-cyan), var(--cyber-green));
+    border-radius: 8px 8px 0 0;
+  }
+
+  .chart-title {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--cyber-cyan);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .chart-title::before {
+    content: '>';
+    color: var(--cyber-green);
+  }
+
+  .chart-container {
+    position: relative;
+    height: 200px;
+  }
+
+  /* Stats Summary */
+  .stats-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-box {
+    background: var(--cyber-bg-card);
+    border: 1px solid var(--cyber-border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-box::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+  }
+
+  .stat-box.drop::after { background: var(--cyber-red); }
+  .stat-box.reject::after { background: var(--cyber-orange); }
+  .stat-box.accept::after { background: var(--cyber-green); }
+  .stat-box.total::after { background: var(--cyber-cyan); }
+
+  .stat-number {
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-number.drop { color: var(--cyber-red); }
+  .stat-number.reject { color: var(--cyber-orange); }
+  .stat-number.accept { color: var(--cyber-green); }
+  .stat-number.total { color: var(--cyber-cyan); }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--cyber-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Cyber Table Styles */
+  .cyber-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--cyber-bg-card);
+    border: 1px solid var(--cyber-border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .cyber-table thead {
+    background: linear-gradient(180deg, var(--cyber-bg-light) 0%, var(--cyber-bg-card) 100%);
+  }
+
+  .cyber-table th {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--cyber-cyan);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--cyber-border);
+    text-align: left;
+  }
+
+  .cyber-table td {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--cyber-text);
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid rgba(26, 74, 110, 0.5);
+    vertical-align: middle;
+  }
+
+  .cyber-table tbody tr {
+    transition: all 0.2s ease;
+  }
+
+  .cyber-table tbody tr:hover {
+    background: rgba(0, 212, 255, 0.05);
+  }
+
+  .cyber-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Badges */
+  .badge-cyber {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  .badge-cyber.drop {
+    background: rgba(255, 51, 102, 0.15);
+    color: var(--cyber-red);
+    border: 1px solid var(--cyber-red);
+  }
+
+  .badge-cyber.reject {
+    background: rgba(255, 149, 0, 0.15);
+    color: var(--cyber-orange);
+    border: 1px solid var(--cyber-orange);
+  }
+
+  .badge-cyber.accept {
+    background: rgba(0, 255, 136, 0.15);
+    color: var(--cyber-green);
+    border: 1px solid var(--cyber-green);
+  }
+
+  /* Live indicator */
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--cyber-green);
+    margin-bottom: 1.5rem;
+  }
+
+  .live-indicator::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--cyber-green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 5px var(--cyber-green); }
+    50% { box-shadow: 0 0 15px var(--cyber-green); }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--cyber-text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+  }
+
+  .time-cell { color: var(--cyber-text-dim); }
+  .ip-cell { color: var(--cyber-cyan); }
+  .proto-cell { color: var(--cyber-orange); }
+  .iface-cell { color: var(--cyber-text-dim); font-size: 0.8rem; }
+
+  .section-title {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--cyber-cyan);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 2rem 0 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .section-title::before {
+    content: '>';
+    color: var(--cyber-green);
+  }
+
+  /* Filter Controls */
+  .filter-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--cyber-bg-card);
+    border: 1px solid var(--cyber-border);
+    border-radius: 8px;
+    flex-wrap: wrap;
+  }
+
+  .filter-controls label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--cyber-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .filter-controls select,
+  .filter-controls input[type="text"] {
+    background: var(--cyber-bg);
+    border: 1px solid var(--cyber-border);
+    border-radius: 4px;
+    color: var(--cyber-text);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .filter-controls select:focus,
+  .filter-controls input:focus {
+    outline: none;
+    border-color: var(--cyber-cyan);
+  }
+
+  .filter-controls select option {
+    background: var(--cyber-bg);
+  }
+
+  /* Date Filter Group */
+  .date-filter-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .date-filter-group input[type="datetime-local"] {
+    background: var(--cyber-bg);
+    border: 1px solid var(--cyber-border);
+    border-radius: 4px;
+    color: var(--cyber-text);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .date-filter-group input[type="datetime-local"]:focus {
+    outline: none;
+    border-color: var(--cyber-cyan);
+  }
+
+  .date-filter-group input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+  }
+
+  .btn-filter {
+    background: var(--cyber-bg-card);
+    border: 1px solid var(--cyber-border);
+    border-radius: 4px;
+    color: var(--cyber-text);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 0.4rem 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-filter:hover {
+    border-color: var(--cyber-cyan);
+    color: var(--cyber-cyan);
+  }
+
+  .btn-filter.active {
+    background: var(--cyber-cyan);
+    border-color: var(--cyber-cyan);
+    color: var(--cyber-bg);
+  }
+
+  .filter-separator {
+    width: 1px;
+    height: 24px;
+    background: var(--cyber-border);
+    margin: 0 0.5rem;
+  }
+
+  /* Expandable Row */
+  .expandable-row {
+    cursor: pointer;
+  }
+
+  .expandable-row td:first-child::before {
+    content: '>';
+    color: var(--cyber-cyan);
+    margin-right: 0.5rem;
+    transition: transform 0.2s ease;
+    display: inline-block;
+  }
+
+  .expandable-row.expanded td:first-child::before {
+    transform: rotate(90deg);
+  }
+
+  .details-row {
+    display: none;
+  }
+
+  .details-row.show {
+    display: table-row;
+  }
+
+  .details-row td {
+    background: var(--cyber-bg);
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--cyber-border);
+  }
+
+  .details-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+
+  .detail-item {
+    padding: 0.75rem;
+    background: var(--cyber-bg-card);
+    border: 1px solid var(--cyber-border);
+    border-radius: 4px;
+  }
+
+  .detail-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--cyber-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.25rem;
+  }
+
+  .detail-value {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--cyber-cyan);
+    word-break: break-all;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="page-title">Firewall Logs</h2>
+
+<div class="live-indicator">
+  LIVE MONITORING
+</div>
+
+<!-- Stats Summary -->
+<div class="stats-summary">
+  <div class="stat-box total">
+    <div class="stat-number total" id="total-count">0</div>
+    <div class="stat-label">Total Events</div>
+  </div>
+  <div class="stat-box drop">
+    <div class="stat-number drop" id="drop-count">0</div>
+    <div class="stat-label">Dropped</div>
+  </div>
+  <div class="stat-box reject">
+    <div class="stat-number reject" id="reject-count">0</div>
+    <div class="stat-label">Rejected</div>
+  </div>
+  <div class="stat-box accept">
+    <div class="stat-number accept" id="accept-count">0</div>
+    <div class="stat-label">Accepted</div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="charts-grid">
+  <div class="chart-card">
+    <div class="chart-title">Traffic by Action</div>
+    <div class="chart-container">
+      <canvas id="actionChart"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Protocol Distribution</div>
+    <div class="chart-container">
+      <canvas id="protoChart"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Traffic Timeline</div>
+    <div class="chart-container">
+      <canvas id="timelineChart"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Top Source IPs</div>
+    <div class="chart-container">
+      <canvas id="sourceChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">Recent Log Entries</div>
+
+<!-- Filter Controls -->
+<div class="filter-controls">
+  <label>Sort:</label>
+  <select id="sortOrder">
+    <option value="newest">Newest First</option>
+    <option value="oldest">Oldest First</option>
+  </select>
+  <label>Filter by Action:</label>
+  <select id="filterAction">
+    <option value="all">All</option>
+    <option value="DROP">Drop</option>
+    <option value="REJECT">Reject</option>
+    <option value="ACCEPT">Accept</option>
+  </select>
+  <label>Filter by Protocol:</label>
+  <select id="filterProto">
+    <option value="all">All</option>
+  </select>
+  <label>Search:</label>
+  <input type="text" id="searchInput" placeholder="Search logs...">
+  
+  <div class="filter-separator"></div>
+  
+  <!-- Date Filter -->
+  <label>Time Range:</label>
+  <select id="datePreset">
+    <option value="all">All Time</option>
+    <option value="1h">Last Hour</option>
+    <option value="24h">Last 24 Hours</option>
+    <option value="7d">Last 7 Days</option>
+    <option value="30d">Last 30 Days</option>
+    <option value="custom">Custom Range</option>
+  </select>
+  
+  <div class="date-filter-group" id="customDateRange" style="display: none;">
+    <label>From:</label>
+    <input type="datetime-local" id="dateFrom">
+    <label>To:</label>
+    <input type="datetime-local" id="dateTo">
+    <button type="button" class="btn-filter" id="applyDateFilter">Apply</button>
+    <button type="button" class="btn-filter" id="clearDateFilter">Clear</button>
+  </div>
+</div>
+
+<table class="cyber-table">
+  <thead>
+    <tr>
+      <th>Time</th>
+      <th>Action</th>
+      <th>Proto</th>
+      <th>Source</th>
+      <th>Destination</th>
+      <th>Interface</th>
+    </tr>
+  </thead>
+  <tbody id="logsBody">
+    {% for e in entries %}
+    <tr class="expandable-row" data-index="{{ loop.index0 }}" data-timestamp="{{ e.time }}">
+      <td class="time-cell">{{ e.time }}</td>
+      <td><span class="badge-cyber {{ 'drop' if e.action == 'DROP' else ('reject' if e.action == 'REJECT' else 'accept') }}">{{ e.action }}</span></td>
+      <td class="proto-cell">{{ e.proto }}</td>
+      <td class="ip-cell">{{ e.src }}</td>
+      <td class="ip-cell">{{ e.dst }}</td>
+      <td class="iface-cell">{{ e.iface }}</td>
+    </tr>
+    <tr class="details-row" data-index="{{ loop.index0 }}">
+      <td colspan="6">
+        <div class="details-content">
+          <div class="detail-item">
+            <div class="detail-label">Source IP</div>
+            <div class="detail-value">{{ e.src.split(':')[0] if ':' in e.src else e.src }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Source Port</div>
+            <div class="detail-value">{{ e.src.split(':')[1] if ':' in e.src else 'N/A' }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Destination IP</div>
+            <div class="detail-value">{{ e.dst.split(':')[0] if ':' in e.dst else e.dst }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Destination Port</div>
+            <div class="detail-value">{{ e.dst.split(':')[1] if ':' in e.dst else 'N/A' }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Protocol</div>
+            <div class="detail-value">{{ e.proto }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Interface</div>
+            <div class="detail-value">{{ e.iface }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Packet Length</div>
+            <div class="detail-value">{{ e.length | default('N/A') }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">TTL</div>
+            <div class="detail-value">{{ e.ttl | default('N/A') }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">TCP Flags</div>
+            <div class="detail-value">{{ e.flags | default('N/A') }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">MAC Source</div>
+            <div class="detail-value">{{ e.mac_src | default('N/A') }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">MAC Destination</div>
+            <div class="detail-value">{{ e.mac_dst | default('N/A') }}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Rule Chain</div>
+            <div class="detail-value">{{ e.chain | default('N/A') }}</div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="empty-state">[ No recent logs found ]</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script>
+// Data from server
+const entries = {{ entries | tojson | safe }};
+
+// Date filter state
+let dateFilterStart = null;
+let dateFilterEnd = null;
+
+// Calculate statistics
+const actionCounts = { DROP: 0, REJECT: 0, ACCEPT: 0 };
+const protoCounts = { TCP: 0, UDP: 0, ICMP: 0, OTHER: 0 };
+const timeCounts = {};
+const sourceCounts = {};
+
+entries.forEach(e => {
+  // Actions
+  if (actionCounts.hasOwnProperty(e.action)) {
+    actionCounts[e.action]++;
+  } else {
+    actionCounts['ACCEPT']++;
+  }
+  
+  // Protocols
+  if (protoCounts.hasOwnProperty(e.proto)) {
+    protoCounts[e.proto]++;
+  } else {
+    protoCounts['OTHER']++;
+  }
+  
+  // Timeline (by hour)
+  const hour = e.time.split(':')[0] + ':00';
+  timeCounts[hour] = (timeCounts[hour] || 0) + 1;
+  
+  // Source IPs
+  const srcIp = e.src.split(':')[0];
+  sourceCounts[srcIp] = (sourceCounts[srcIp] || 0) + 1;
+});
+
+// Update stat boxes
+document.getElementById('total-count').textContent = entries.length;
+document.getElementById('drop-count').textContent = actionCounts.DROP;
+document.getElementById('reject-count').textContent = actionCounts.REJECT;
+document.getElementById('accept-count').textContent = actionCounts.ACCEPT;
+
+// Populate protocol filter
+const protoFilter = document.getElementById('filterProto');
+Object.keys(protoCounts).forEach(proto => {
+  if (protoCounts[proto] > 0) {
+    const option = document.createElement('option');
+    option.value = proto;
+    option.textContent = proto;
+    protoFilter.appendChild(option);
+  }
+});
+
+// Chart.js default styling
+Chart.defaults.color = '#8ba3b9';
+Chart.defaults.borderColor = 'rgba(26, 74, 110, 0.5)';
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+
+// Action Donut Chart
+new Chart(document.getElementById('actionChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['DROP', 'REJECT', 'ACCEPT'],
+    datasets: [{
+      data: [actionCounts.DROP, actionCounts.REJECT, actionCounts.ACCEPT],
+      backgroundColor: ['#ff3366', '#ff9500', '#00ff88'],
+      borderColor: '#0a1628',
+      borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '60%',
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: { padding: 15, usePointStyle: true, pointStyle: 'circle' }
+      }
+    }
+  }
+});
+
+// Protocol Bar Chart
+new Chart(document.getElementById('protoChart'), {
+  type: 'bar',
+  data: {
+    labels: Object.keys(protoCounts),
+    datasets: [{
+      label: 'Packets',
+      data: Object.values(protoCounts),
+      backgroundColor: ['#00d4ff', '#00ff88', '#ff9500', '#ff3366'],
+      borderRadius: 4,
+      borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: 'rgba(26, 74, 110, 0.3)' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// Timeline Chart
+const sortedTimes = Object.keys(timeCounts).sort();
+new Chart(document.getElementById('timelineChart'), {
+  type: 'line',
+  data: {
+    labels: sortedTimes,
+    datasets: [{
+      label: 'Events',
+      data: sortedTimes.map(t => timeCounts[t]),
+      borderColor: '#00d4ff',
+      backgroundColor: 'rgba(0, 212, 255, 0.1)',
+      fill: true,
+      tension: 0.4,
+      pointBackgroundColor: '#00d4ff',
+      pointBorderColor: '#0a1628',
+      pointBorderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: 'rgba(26, 74, 110, 0.3)' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// Top Sources Chart
+const topSources = Object.entries(sourceCounts)
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 5);
+new Chart(document.getElementById('sourceChart'), {
+  type: 'bar',
+  data: {
+    labels: topSources.map(s => s[0]),
+    datasets: [{
+      label: 'Packets',
+      data: topSources.map(s => s[1]),
+      backgroundColor: '#00ff88',
+      borderRadius: 4,
+      borderSkipped: false
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { beginAtZero: true, grid: { color: 'rgba(26, 74, 110, 0.3)' } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+// Expandable rows functionality
+document.querySelectorAll('.expandable-row').forEach(row => {
+  row.addEventListener('click', function() {
+    const index = this.dataset.index;
+    const detailsRow = document.querySelector(`.details-row[data-index="${index}"]`);
+    
+    this.classList.toggle('expanded');
+    detailsRow.classList.toggle('show');
+  });
+});
+
+// Date preset handling
+document.getElementById('datePreset').addEventListener('change', function() {
+  const customRange = document.getElementById('customDateRange');
+  const preset = this.value;
+  
+  if (preset === 'custom') {
+    customRange.style.display = 'flex';
+    return;
+  }
+  
+  customRange.style.display = 'none';
+  
+  if (preset === 'all') {
+    dateFilterStart = null;
+    dateFilterEnd = null;
+  } else {
+    const now = new Date();
+    dateFilterEnd = now;
+    
+    switch(preset) {
+      case '1h':
+        dateFilterStart = new Date(now.getTime() - 60 * 60 * 1000);
+        break;
+      case '24h':
+        dateFilterStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case '7d':
+        dateFilterStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        dateFilterStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+    }
+  }
+  
+  filterAndSortLogs();
+});
+
+// Custom date range handling
+document.getElementById('applyDateFilter').addEventListener('click', function() {
+  const fromValue = document.getElementById('dateFrom').value;
+  const toValue = document.getElementById('dateTo').value;
+  
+  dateFilterStart = fromValue ? new Date(fromValue) : null;
+  dateFilterEnd = toValue ? new Date(toValue) : null;
+  
+  filterAndSortLogs();
+});
+
+document.getElementById('clearDateFilter').addEventListener('click', function() {
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value = '';
+  document.getElementById('datePreset').value = 'all';
+  document.getElementById('customDateRange').style.display = 'none';
+  dateFilterStart = null;
+  dateFilterEnd = null;
+  filterAndSortLogs();
+});
+
+// Parse timestamp function
+function parseTimestamp(timestamp) {
+  if (!timestamp) return null;
+  
+  // Try ISO format first
+  let date = new Date(timestamp);
+  if (!isNaN(date.getTime())) return date;
+  
+  // Try other common formats
+  // Format: "2024-01-15 14:30:25" or "15/01/2024 14:30:25" or "14:30:25"
+  const parts = timestamp.split(/[\s\/\-T:]/);
+  
+  // If only time (HH:MM:SS), use today's date
+  if (parts.length === 3 && timestamp.includes(':')) {
+    const today = new Date();
+    date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 
+                    parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]) || 0);
+    if (!isNaN(date.getTime())) return date;
+  }
+  
+  if (parts.length >= 6) {
+    // Assume YYYY-MM-DD HH:MM:SS or similar
+    date = new Date(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]);
+    if (!isNaN(date.getTime())) return date;
+  }
+  
+  return null;
+}
+
+// Filter and sort functionality
+function filterAndSortLogs() {
+  const sortOrder = document.getElementById('sortOrder').value;
+  const filterAction = document.getElementById('filterAction').value;
+  const filterProto = document.getElementById('filterProto').value;
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  
+  const rows = document.querySelectorAll('.expandable-row');
+  const detailsRows = document.querySelectorAll('.details-row');
+  
+  // Convert to array for sorting
+  const rowsArray = Array.from(rows);
+  
+  rowsArray.forEach((row, i) => {
+    const timeCell = row.querySelector('.time-cell').textContent;
+    const protoCell = row.querySelector('.proto-cell').textContent;
+    const actionBadge = row.querySelector('.badge-cyber');
+    const action = actionBadge ? actionBadge.textContent : '';
+    const timestamp = row.dataset.timestamp || timeCell;
+    
+    let show = true;
+    
+    // Filter by date
+    if (dateFilterStart || dateFilterEnd) {
+      const rowDate = parseTimestamp(timestamp);
+      if (rowDate) {
+        if (dateFilterStart && rowDate < dateFilterStart) {
+          show = false;
+        }
+        if (dateFilterEnd && rowDate > dateFilterEnd) {
+          show = false;
+        }
+      }
+    }
+    
+    // Filter by action
+    if (filterAction !== 'all' && action !== filterAction) {
+      show = false;
+    }
+    
+    // Filter by protocol
+    if (filterProto !== 'all' && protoCell !== filterProto) {
+      show = false;
+    }
+    
+    // Filter by search
+    if (searchTerm && !row.textContent.toLowerCase().includes(searchTerm)) {
+      show = false;
+    }
+    
+    row.style.display = show ? '' : 'none';
+    detailsRows[i].style.display = 'none';
+    detailsRows[i].classList.remove('show');
+    row.classList.remove('expanded');
+  });
+  
+  // Sort rows
+  const tbody = document.getElementById('logsBody');
+  const sortedRows = rowsArray.sort((a, b) => {
+    const timeA = a.querySelector('.time-cell').textContent;
+    const timeB = b.querySelector('.time-cell').textContent;
+    
+    if (sortOrder === 'newest') {
+      return timeB.localeCompare(timeA);
+    } else {
+      return timeA.localeCompare(timeB);
+    }
+  });
+  
+  sortedRows.forEach(row => {
+    const index = row.dataset.index;
+    const detailsRow = document.querySelector(`.details-row[data-index="${index}"]`);
+    tbody.appendChild(row);
+    tbody.appendChild(detailsRow);
+  });
+}
+
+document.getElementById('sortOrder').addEventListener('change', filterAndSortLogs);
+document.getElementById('filterAction').addEventListener('change', filterAndSortLogs);
+document.getElementById('filterProto').addEventListener('change', filterAndSortLogs);
+document.getElementById('searchInput').addEventListener('input', filterAndSortLogs);
+
+// Initial sort (newest first)
+filterAndSortLogs();
+</script>
+{% endblock %}
