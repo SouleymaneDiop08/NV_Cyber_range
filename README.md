@@ -15,7 +15,7 @@ authentification, aucun accès aux environnements de simulation.
 
 Les trois composants sont indépendants et communiquent en REST. Le détail de
 l'architecture est dans `docs/presentations/talixman-architecture-technique.docx`
-et, pour la partie applicative, dans `talixman-auth/CLAUDE.md`.
+et, pour la partie applicative, dans `talixman-auth/NOTES-TECHNIQUES.md`.
 
 ## Démarrage rapide
 

@@ -18,7 +18,7 @@ x-orchestrator-base: &orchestrator-base
   build:
     context: .
     # network: host — le DNS du bridge Docker par défaut est indisponible AU
-    # BUILD dans cet environnement (cf. CLAUDE.md) : sans ça, `apk add` échoue.
+    # BUILD dans cet environnement (cf. NOTES-TECHNIQUES.md) : sans ça, `apk add` échoue.
     network: host
   env_file:
     - .env
@@ -88,35 +88,41 @@ services:
       # Réseau des labos : la gateway doit résoudre `<labId>` par DNS pour
       # proxifier vers le bon conteneur de labo.
       labs_network:
-      # Réseau d'entrée, non `internal`. Indispensable : Docker ne peut pas
-      # publier de port pour un conteneur attaché UNIQUEMENT à un réseau
-      # `internal` (le binding est enregistré mais aucune règle DNAT n'est
-      # créée). Ce réseau ne porte que la gateway — elle reste donc hors du
-      # réseau du portail, et les labos hors de celui-ci.
-      ingress_network:
-
 volumes:
   orchestrator_data:
 
 networks:
-  # Réseau du portail (créé par talixman-auth). Il porte Postgres, Redis et
-  # Keycloak : AUCUN labo ne doit y être attaché.
+  # Réseau du portail (créé par talixman-auth). Il porte Postgres et Redis :
+  # AUCUN labo ne doit y être attaché.
   portal_network:
     external: true
-    name: talixman-auth_default
+    name: ${PORTAL_NETWORK:-talixman-auth_default}
 
-  # Réseau dédié aux labos, créé ici. `internal: true` : pas de route vers
-  # l'extérieur, donc un labo compromis n'a aucun accès sortant Internet — et
-  # comme aucun service du portail n'y est attaché, il ne peut pas non plus
-  # joindre la base de données de la plateforme.
-  # Les images du labo étant préchargées dans son image, l'absence de sortie
-  # réseau ne gêne pas son démarrage.
+  # Réseau des labos, créé ici. Il porte les conteneurs de laboratoire et les
+  # deux rôles de l'orchestrateur.
+  #
+  # `internal: false` — les labos disposent d'une route sortante (Internet).
+  #
+  # L'isolation vis-à-vis du portail repose sur Docker lui-même : l'accès
+  # direct de bridge à bridge vers le réseau du portail est bloqué, ce qui a
+  # été vérifié à la mesure — timeout, aucun paquet n'atteignant même la
+  # chaîne FORWARD.
+  #
+  # Limite assumée : les services PUBLIÉS sur l'IP de l'hôte restent
+  # joignables depuis un labo. La parade retenue n'est pas une règle de
+  # pare-feu mais de ne pas les publier — cf. docker-compose.prod.yml, où
+  # Postgres et Redis n'exposent aucun port.
+  #
+  # Le sous-réseau est FIGÉ pour que l'adressage reste prévisible d'un
+  # déploiement à l'autre.
+  #
+  # Ce réseau publie aussi les points d'entrée de la gateway : n'étant plus
+  # `internal`, il n'a plus besoin du réseau d'ingress dédié qui existait
+  # uniquement pour contourner l'impossibilité de publier un port depuis un
+  # réseau interne.
   labs_network:
     name: ${LABS_NETWORK:-talixman_labs}
-    internal: true
-
-  # Entrée publique de la gateway uniquement (cf. ci-dessus). Volontairement
-  # distinct du réseau du portail : la gateway n'a aucune raison de joindre
-  # Postgres, Redis ou Keycloak.
-  ingress_network:
-    name: ${INGRESS_NETWORK:-talixman_gateway_ingress}
+    internal: false
+    ipam:
+      config:
+        - subnet: ${LABS_SUBNET:-172.30.0.0/16}

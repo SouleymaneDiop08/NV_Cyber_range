@@ -4,7 +4,7 @@ name: talixman-auth-prod
 # nom de domaine réel est disponible pour Let's Encrypt. En attendant, `api` et `frontend`
 # exposent leurs ports directement ; à placer derrière un proxy TLS existant ou un tunnel
 # (ex. VPN, SSH) avant toute exposition sur un réseau non fiable. Voir la checklist sécurité
-# dans CLAUDE.md.
+# dans NOTES-TECHNIQUES.md.
 
 services:
   postgres:

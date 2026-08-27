@@ -1,13 +1,69 @@
 [
-  { "key": "plc-station-a", "label": "PLC Station A", "port": 8080, "service": "plc_station_a" },
-  { "key": "scada-station-a", "label": "SCADA Station A", "port": 1881, "service": "scada_station_a" },
-  { "key": "plc-station-b", "label": "PLC Station B", "port": 8081, "service": "plc_station_b" },
-  { "key": "scada-station-b", "label": "SCADA Station B", "port": 1882, "service": "scada_station_b" },
-  { "key": "viewer3d-station-b", "label": "Viewer 3D Station B", "port": 8090, "service": "viewer3d_station_b" },
-  { "key": "scada-scentral", "label": "SCADA Central", "port": 1884, "service": "scada_scentral" },
-  { "key": "ews", "label": "Poste d'ingénierie (EWS)", "port": 6080, "service": "ews" },
-  { "key": "kali-vnc", "label": "Kali Attacker (VNC)", "port": 6081, "service": "kali_attacker" },
-  { "key": "kali-http", "label": "Kali Attacker (HTTP)", "port": 5000, "service": "kali_attacker" },
-  { "key": "router-r1-r3", "label": "Routeur R1↔R3", "port": 1444, "service": "router_r1_r3" },
-  { "key": "router-r2-r3", "label": "Routeur R2↔R3", "port": 1443, "service": "router_r2_r3" }
+  {
+    "key": "plc-station-a",
+    "label": "PLC Station A",
+    "port": 8080,
+    "service": "plc_station_a"
+  },
+  {
+    "key": "scada-station-a",
+    "label": "SCADA Station A",
+    "port": 1881,
+    "service": "scada_station_a"
+  },
+  {
+    "key": "plc-station-b",
+    "label": "PLC Station B",
+    "port": 8081,
+    "service": "plc_station_b"
+  },
+  {
+    "key": "scada-station-b",
+    "label": "SCADA Station B",
+    "port": 1882,
+    "service": "scada_station_b"
+  },
+  {
+    "key": "viewer3d-station-b",
+    "label": "Viewer 3D Station B",
+    "port": 8090,
+    "service": "viewer3d_station_b"
+  },
+  {
+    "key": "scada-scentral",
+    "label": "SCADA Central",
+    "port": 1884,
+    "service": "scada_scentral"
+  },
+  {
+    "key": "ews",
+    "label": "Poste d'ingénierie (EWS)",
+    "port": 6080,
+    "service": "ews"
+  },
+  {
+    "key": "kali-vnc",
+    "label": "Kali Attacker (VNC)",
+    "port": 6081,
+    "service": "kali_attacker",
+    "path": "/vnc.html"
+  },
+  {
+    "key": "kali-http",
+    "label": "Kali Attacker (HTTP)",
+    "port": 5000,
+    "service": "kali_attacker"
+  },
+  {
+    "key": "router-r1-r3",
+    "label": "Routeur R1↔R3",
+    "port": 1444,
+    "service": "router_r1_r3"
+  },
+  {
+    "key": "router-r2-r3",
+    "label": "Routeur R2↔R3",
+    "port": 1443,
+    "service": "router_r2_r3"
+  }
 ]

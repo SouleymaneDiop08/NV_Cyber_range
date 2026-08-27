@@ -24,32 +24,42 @@ export RESOLUTION=${RESOLUTION:-1280x720}
 route add -net 192.168.10.0/24 gw 192.168.30.254 || true
 route add -net 192.168.20.0/24 gw 192.168.30.253 || true
 
-# --- GÉNÉRATION DU CERTIFICAT SSL (HTTPS) ---
-CERT_DIR="/etc/ssl/novnc"
-mkdir -p "$CERT_DIR"
 
-if [ ! -f "$CERT_DIR/novnc.pem" ]; then
-    echo "Creation du certificat HTTPS auto-signe..."
-    openssl req -x509 -nodes -newkey rsa:2048 \
-        -keyout "$CERT_DIR/novnc.key" \
-        -out "$CERT_DIR/novnc.crt" \
-        -days 365 \
-        -subj "/C=FR/ST=Paris/L=Paris/O=CyberRange/CN=kali-attacker"
-    
-    # Combiner clé et certificat pour websockify
-    cat "$CERT_DIR/novnc.crt" "$CERT_DIR/novnc.key" > "$CERT_DIR/novnc.pem"
-    chmod 644 "$CERT_DIR/novnc.pem"
-fi
-# --- FIN DE LA CONFIG HTTPS ---
-
-# --- Route vers SOC (192.168.40.0/24) via Router R4 ---
-# Essai avec 'ip' (iproute2) puis fallback 'route' (net-tools)
-if command -v ip >/dev/null 2>&1; then
-    ip route add 192.168.40.0/24 via 192.168.30.251 dev eth0 2>/dev/null || true
+# --- Outils reseau utilisables par l'utilisateur du bureau -------------------
+# Le build Docker ne preserve pas les capacites de fichier : /usr/bin/ping perd
+# son cap_net_raw et devient inutilisable pour l'utilisateur `kali` (le compte
+# de la session graphique), alors qu'il fonctionne encore en root. C'est le
+# symptome classique « ping: socket: Operation not permitted ».
+if command -v setcap >/dev/null 2>&1; then
+    setcap cap_net_raw+ep /usr/bin/ping 2>/dev/null || chmod u+s /usr/bin/ping 2>/dev/null || true
 else
-    route add -net 192.168.40.0 netmask 255.255.255.0 gw 192.168.30.251 dev eth0 2>/dev/null || true
+    chmod u+s /usr/bin/ping 2>/dev/null || true
 fi
-echo "[Kali] Route SOC ajoutée : 192.168.40.0/24 via 192.168.30.251"
+# Meme traitement pour les scanners qui ouvrent des sockets bruts.
+for b in /usr/bin/nmap /usr/bin/hping3 /usr/bin/traceroute; do
+    [ -x "$b" ] && setcap cap_net_raw,cap_net_admin+ep "$b" 2>/dev/null || true
+done
+echo "[Kali] Capacites reseau restaurees pour l'utilisateur du bureau"
+
+# --- Routes vers les zones industrielles -------------------------------------
+# Kali est sur L3 (192.168.30.30) alors que les automates sont sur L1 et L2 :
+# sans route explicite, ses scans partent vers la passerelle Docker et
+# n'atteignent jamais les routeurs. Les routes retour existent deja cote
+# automates (station_a/plc_a/entrypoint.sh).
+#
+# L'ancienne route vers un reseau SOC 192.168.40.0/24 via 192.168.30.251 a ete
+# retiree : ni ce reseau ni ce routeur n'existent dans la topologie actuelle.
+ROUTE_L1_GATEWAY="${ROUTE_L1_GATEWAY:-192.168.30.254}"   # router_r1_r3
+ROUTE_L2_GATEWAY="${ROUTE_L2_GATEWAY:-192.168.30.253}"   # router_r2_r3
+
+if command -v ip >/dev/null 2>&1; then
+    ip route add 192.168.10.0/24 via "$ROUTE_L1_GATEWAY" dev eth0 2>/dev/null || true
+    ip route add 192.168.20.0/24 via "$ROUTE_L2_GATEWAY" dev eth0 2>/dev/null || true
+else
+    route add -net 192.168.10.0 netmask 255.255.255.0 gw "$ROUTE_L1_GATEWAY" dev eth0 2>/dev/null || true
+    route add -net 192.168.20.0 netmask 255.255.255.0 gw "$ROUTE_L2_GATEWAY" dev eth0 2>/dev/null || true
+fi
+echo "[Kali] Routes ajoutees : L1 via $ROUTE_L1_GATEWAY, L2 via $ROUTE_L2_GATEWAY"
 
 # Start supervisord
 exec "$@"

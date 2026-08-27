@@ -43,3 +43,13 @@ Thumbs.db
 *.log
 .~lock.*
 /tmp/
+
+# Réglages locaux de l'outillage de développement
+.claude/
+
+# Modèles 3D volumineux — au-delà de la limite de 100 Mo par fichier de GitHub.
+# Ils restent présents sur le disque (le compose les monte en volume) mais ne
+# sont pas versionnés. Pour un clone neuf, les récupérer séparément ou basculer
+# la vue 3D sur model-optimized.glb (8 Mo, versionné).
+dispatching/viewer3d-station-b/frontend/static/assets/extracted/electrical_substation/model.dae
+dispatching/viewer3d-station-b/frontend/static/assets/extracted/electrical_substation/model-converted-raw.glb

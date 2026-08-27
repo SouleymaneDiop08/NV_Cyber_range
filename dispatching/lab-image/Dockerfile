@@ -59,7 +59,6 @@ COPY --chown=${LAB_UID}:${LAB_GID} kali-attacker /lab/kali-attacker
 COPY --chown=${LAB_UID}:${LAB_GID} router1 /lab/router1
 COPY --chown=${LAB_UID}:${LAB_GID} router2 /lab/router2
 COPY --chown=${LAB_UID}:${LAB_GID} sensor_l3 /lab/sensor_l3
-COPY --chown=${LAB_UID}:${LAB_GID} reverse-proxy /lab/reverse-proxy
 
 # Images pré-buildées (docker save). Présent grâce à image-tars/.gitkeep même
 # si build-images.sh n'a pas encore tourné (COPY d'un dossier requiert qu'il

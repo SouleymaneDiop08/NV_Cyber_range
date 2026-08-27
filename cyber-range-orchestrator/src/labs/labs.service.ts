@@ -85,6 +85,19 @@ interface LabComponent {
   port: number;
   /** Nom du service Compose, corrélé avec l'état renvoyé par le driver. */
   service: string;
+  /**
+   * Chemin d'atterrissage optionnel, ajouté à l'origine renvoyée au portail.
+   *
+   * Sert aux composants dont la racine n'est pas la page utile : noVNC, par
+   * exemple, n'expose son client qu'en `/vnc.html`. C'est la seule chose que
+   * l'adaptateur nginx du laboratoire faisait encore ; la déclarer ici évite
+   * d'avoir à maintenir un conteneur entier pour une redirection.
+   *
+   * N'affecte que l'URL de premier accès : le composant reste servi à la
+   * racine de sa propre origine, ce qui préserve la règle « une origine par
+   * composant ».
+   */
+  path?: string;
 }
 
 /**
@@ -326,7 +339,9 @@ export class LabsService {
       name: component.key,
       state,
       running: state === 'running',
-      url: binding ? this.ingress.urlFor(binding) : '',
+      url: binding
+        ? `${this.ingress.urlFor(binding)}${component.path ?? ''}`
+        : '',
     };
   }
 
