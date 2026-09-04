@@ -53,3 +53,6 @@ Thumbs.db
 # la vue 3D sur model-optimized.glb (8 Mo, versionné).
 dispatching/viewer3d-station-b/frontend/static/assets/extracted/electrical_substation/model.dae
 dispatching/viewer3d-station-b/frontend/static/assets/extracted/electrical_substation/model-converted-raw.glb
+
+# Secrets générés par scripts/init-plateforme.sh
+.secrets-generes
