@@ -1,0 +1,51 @@
+[
+  {
+    "key": "vue-gare",
+    "label": "Vue gare & équipements",
+    "port": 3011,
+    "service": "vue_gare"
+  },
+  {
+    "key": "vue-globale",
+    "label": "Supervision globale (PCC)",
+    "port": 3012,
+    "service": "vue_globale"
+  },
+  {
+    "key": "circulation",
+    "label": "Circulation & incidents (ter-map)",
+    "port": 3001,
+    "service": "ter_frontend"
+  },
+  {
+    "key": "viewer3d",
+    "label": "Vue 3D sous-station électrique",
+    "port": 8090,
+    "service": "viewer3d_station_b"
+  },
+  {
+    "key": "mur",
+    "label": "Mur de supervision",
+    "port": 3013,
+    "service": "mur"
+  },
+  {
+    "key": "openplc",
+    "label": "OpenPLC Station B",
+    "port": 8081,
+    "service": "plc_station_b"
+  },
+  {
+    "key": "kali-vnc",
+    "label": "Kali Attacker (bureau noVNC)",
+    "port": 6080,
+    "service": "kali_attacker",
+    "path": "/vnc.html"
+  },
+  {
+    "key": "netcarto",
+    "label": "NetCarto (cartographie réseau)",
+    "port": 5055,
+    "service": "kali_attacker"
+  }
+]

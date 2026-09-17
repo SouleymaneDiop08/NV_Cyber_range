@@ -1,0 +1,12 @@
+# Contexte du build de l'IMAGE DE LABO (lab-image/Dockerfile). Ne s'applique
+# qu'à ce build : les contextes de service (station_b/, ter-map/, …) ont leurs
+# propres règles. Le labo tourne en --no-build (images rechargées depuis
+# image-tars/), donc les sources ci-dessous n'y servent pas à l'exécution.
+**/__pycache__
+**/*.pyc
+
+# Données runtime de l'API (régénérées dans le labo).
+digital-twin-api/data/*.jsonl
+
+# Modèle 3D source (148 Mo) : seul model-optimized.glb sert au runtime.
+viewer3d-station-b/frontend/static/assets/extracted/electrical_substation/model.dae

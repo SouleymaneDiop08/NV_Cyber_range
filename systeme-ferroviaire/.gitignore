@@ -16,3 +16,7 @@ __pycache__/
 *.pyc
 
 # Le eve.json de Suricata vit dans le volume Docker suricata_eve, jamais ici.
+
+# Images de services exportées (docker save) — volumineuses, régénérées par
+# build-images.sh. Le .gitkeep garde le dossier pour le COPY du Dockerfile.
+image-tars/*.tar

@@ -310,15 +310,14 @@ services:
       - "3013:80"
 
   # ── Poste attaquant Kali (cartographie réseau + scénarios ICS) ───────────
-  #  Réutilise l'image déjà présente sur l'hôte (talixman-dispatching-kali-attacker)
-  #  au lieu de la reconstruire : elle est bâtie depuis le Dockerfile de
-  #  ./kali-attacker (mêmes scripts /opt/tools, même entrypoint, mêmes ports).
-  #  Placé directement sur l2_network — ce compose autonome n'a pas de routeurs,
-  #  donc l'accès au PLC Station B (192.168.20.10:502) visé par les scénarios se
-  #  fait sur le segment industriel lui-même. Les scripts d'attaque, absents de
+  #  Image construite depuis ./kali-attacker (labo autonome, prêt à être
+  #  packagé comme template de l'orchestrateur — plus de dépendance à l'image
+  #  du dispatching). Placé en L3 (.30) : il atteint le PLC .20 et la gare .40
+  #  à travers le routeur (voir dtf_router). Les scripts d'attaque, absents de
   #  l'image, sont montés depuis ./scenarios.
   kali_attacker:
-    image: talixman-dispatching-kali-attacker:latest
+    build: ./kali-attacker          # image propre au labo (autonomie pour l'intégration)
+    image: dtf-kali-attacker:latest
     container_name: dtf_kali_attacker
     restart: unless-stopped
     cap_add:
