@@ -1,0 +1,132 @@
+{
+  "9300001": {
+    "family": "TER-ENERGY",
+    "scenario": "S5",
+    "zone": "energie",
+    "severity": "critical",
+    "title": "Commande anormale vers l'énergie traction",
+    "operator_message": "Une commande de contrôle a été envoyée vers l'automate énergie depuis une machine non prévue.",
+    "potential_impact": "Baisse de tension caténaire, ralentissement ou arrêt du train.",
+    "views": ["global", "gare", "ligne", "3d"]
+  },
+  "9300010": {
+    "family": "TER-GARE-OT",
+    "scenario": "S3",
+    "zone": "interconnexion_gare_ot",
+    "severity": "high",
+    "title": "Communication non prévue vers le réseau industriel",
+    "operator_message": "Une machine non prévue tente de communiquer avec un système industriel.",
+    "potential_impact": "Risque de progression vers les systèmes de supervision ou de contrôle.",
+    "views": ["global", "gare"]
+  },
+  "9300011": {
+    "family": "TER-GARE-OT",
+    "scenario": "S3",
+    "zone": "interconnexion_gare_ot",
+    "severity": "high",
+    "title": "Communication gare vers réseau industriel",
+    "operator_message": "Un équipement de gare tente de communiquer avec un système industriel sans autorisation.",
+    "potential_impact": "Risque de perturbation des systèmes de supervision ou de contrôle.",
+    "views": ["global", "gare"]
+  },
+  "9300020": {
+    "family": "TER-RECON",
+    "scenario": "S1",
+    "zone": "services_gare",
+    "severity": "medium",
+    "title": "Découverte rapide des équipements de gare",
+    "operator_message": "Une machine interroge rapidement plusieurs équipements de la gare.",
+    "potential_impact": "Aucun impact opérationnel confirmé à ce stade.",
+    "views": ["global", "gare"]
+  },
+  "9300021": {
+    "family": "TER-RECON",
+    "scenario": "S1",
+    "zone": "station_b",
+    "severity": "medium",
+    "title": "Découverte des équipements industriels",
+    "operator_message": "Une machine cherche à identifier les équipements qui répondent sur le réseau.",
+    "potential_impact": "Aucun impact opérationnel confirmé à ce stade.",
+    "views": ["global", "gare", "ligne"]
+  },
+  "9300002": {
+    "family": "TER-ENERGY",
+    "scenario": "S5",
+    "zone": "energie",
+    "severity": "critical",
+    "title": "Rafale de commandes vers l'énergie traction",
+    "operator_message": "Plusieurs commandes de contrôle ont été envoyées vers l'automate énergie depuis une machine non prévue.",
+    "potential_impact": "Baisse de tension caténaire, ralentissement ou arrêt du train.",
+    "views": ["global", "gare", "ligne", "3d"]
+  },
+  "9300030": {
+    "family": "TER-CTC",
+    "scenario": "S4",
+    "zone": "signalisation",
+    "severity": "critical",
+    "title": "Commande suspecte vers la signalisation",
+    "operator_message": "Une tentative de commande sur la signalisation provient d'une source non autorisée.",
+    "potential_impact": "Ralentissement, arrêt de sécurité ou incohérence de signalisation.",
+    "views": ["global", "gare", "ligne"]
+  },
+  "9300031": {
+    "family": "TER-CTC",
+    "scenario": "S4",
+    "zone": "signalisation",
+    "severity": "critical",
+    "title": "Modification suspecte des consignes de circulation",
+    "operator_message": "Une tentative de modification des consignes de circulation provient d'une source non autorisée.",
+    "potential_impact": "Ralentissement, arrêt de sécurité ou incohérence de signalisation.",
+    "views": ["global", "gare", "ligne"]
+  },
+  "9300040": {
+    "family": "TER-SIV",
+    "scenario": "S2",
+    "zone": "information_voyageurs",
+    "severity": "high",
+    "title": "Information voyageurs incohérente",
+    "operator_message": "L'information affichée aux voyageurs ne correspond plus à la position réelle du train.",
+    "potential_impact": "Service voyageurs dégradé sans impact physique immédiat sur la circulation.",
+    "views": ["global", "gare", "ligne"]
+  },
+  "9300041": {
+    "family": "TER-SIV",
+    "scenario": "S2",
+    "zone": "information_voyageurs",
+    "severity": "high",
+    "title": "Annonce voyageurs modifiée",
+    "operator_message": "Une annonce voyageurs a été modifiée depuis une source non autorisée.",
+    "potential_impact": "Information voyageurs dégradée sans impact physique immédiat sur la circulation.",
+    "views": ["global", "gare", "ligne"]
+  },
+  "9300050": {
+    "family": "TER-TELEM",
+    "scenario": "S6",
+    "zone": "supervision",
+    "severity": "critical",
+    "title": "Télémétrie incohérente",
+    "operator_message": "La supervision affiche une valeur normale alors que le procédé indique une situation dégradée.",
+    "potential_impact": "Risque de mauvaise décision opérateur.",
+    "views": ["global", "gare", "ligne", "3d"]
+  },
+  "9300060": {
+    "family": "TER-MGMT",
+    "scenario": "S3",
+    "zone": "administration",
+    "severity": "high",
+    "title": "Accès anormal à une interface d'administration",
+    "operator_message": "Une interface d'administration industrielle est consultée depuis une machine non prévue.",
+    "potential_impact": "Risque de modification de configuration ou de prise de contrôle.",
+    "views": ["global", "gare"]
+  },
+  "9300061": {
+    "family": "TER-MGMT",
+    "scenario": "S3",
+    "zone": "administration",
+    "severity": "high",
+    "title": "Tentative de connexion à l'automate",
+    "operator_message": "Une tentative de connexion à l'automate industriel provient d'une machine non prévue.",
+    "potential_impact": "Risque de modification de configuration ou de prise de contrôle.",
+    "views": ["global", "gare"]
+  }
+}

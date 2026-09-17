@@ -1,0 +1,42 @@
+# ============================================================================
+#  Règles Suricata — Jumeau numérique ferroviaire TER Dakar / Diamniadio
+#  SID 930xxxx, alignés sur digital-twin-api/config/rule-mapping.json.
+#
+#  Placement : Suricata écoute les interfaces du routeur (eth0=.30 IT/attaquant,
+#  eth1=.40 gare). Tout le trafic légitime Modbus (ter-backend/viewer3d -> PLC)
+#  reste INTRA-.20 et ne traverse jamais le routeur : chaque trame Modbus vue
+#  ici est donc, par construction, une communication inter-zone anormale.
+#
+#  Cibles : PLC 192.168.20.10 (Modbus 502, web OpenPLC 8080)
+#           Gare 192.168.40.11 billettique · .12 SIV · .13 sono · .14 pipc · .15 cctv
+#  Attaquant de référence : Kali 192.168.30.30 (réseau .30)
+# ============================================================================
+
+# --- TER-ENERGY — écriture vers l'énergie traction (feeder.py : FC06 %MW10-12) -
+alert modbus any any -> 192.168.20.10 502 (msg:"TER-ENERGY commande anormale vers l energie traction"; flow:to_server,established; modbus:access write holding; threshold:type limit,track by_src,count 1,seconds 30; classtype:attempted-admin; priority:1; sid:9300001; rev:1;)
+alert modbus any any -> 192.168.20.10 502 (msg:"TER-ENERGY rafale de commandes vers l energie traction"; flow:to_server,established; modbus:access write holding; threshold:type both,track by_src,count 5,seconds 30; classtype:attempted-admin; priority:1; sid:9300002; rev:1;)
+
+# --- TER-GARE-OT — communication latérale gare (.40) -> réseau industriel (.20) -
+alert tcp 192.168.40.0/24 any -> 192.168.20.0/24 [502,102,44818,20000] (msg:"TER-GARE-OT communication non prevue vers le reseau industriel"; flow:to_server,established; threshold:type limit,track by_src,count 1,seconds 30; classtype:policy-violation; priority:2; sid:9300010; rev:1;)
+alert modbus 192.168.40.0/24 any -> 192.168.20.0/24 502 (msg:"TER-GARE-OT communication gare vers reseau industriel (Modbus)"; flow:to_server,established; modbus:access write; threshold:type limit,track by_src,count 1,seconds 30; classtype:attempted-admin; priority:1; sid:9300011; rev:1;)
+
+# --- TER-RECON — découverte réseau (netcarto.py : scan nmap SYN) ---------------
+alert tcp 192.168.30.0/24 any -> 192.168.40.0/24 [8080,502,102,44818] (msg:"TER-RECON decouverte rapide des equipements de gare"; flags:S,12; threshold:type both,track by_src,count 5,seconds 10; classtype:network-scan; priority:3; sid:9300020; rev:1;)
+alert tcp 192.168.30.0/24 any -> 192.168.20.0/24 [502,8080,44818,102,20000] (msg:"TER-RECON decouverte des equipements industriels"; flags:S,12; threshold:type both,track by_src,count 5,seconds 10; classtype:network-scan; priority:3; sid:9300021; rev:1;)
+
+# --- TER-CTC — écriture signalisation / aiguille (ctc.py : FC05 coil 32) -------
+alert modbus any any -> 192.168.20.10 502 (msg:"TER-CTC commande suspecte vers la signalisation"; flow:to_server,established; modbus:access write coils; threshold:type limit,track by_src,count 1,seconds 30; classtype:attempted-admin; priority:1; sid:9300030; rev:1;)
+alert modbus any any -> 192.168.20.10 502 (msg:"TER-CTC modification suspecte des consignes de circulation"; flow:to_server,established; modbus:access write coils; threshold:type both,track by_src,count 3,seconds 20; classtype:attempted-admin; priority:1; sid:9300031; rev:1;)
+
+# --- TER-SIV — altération de l'information voyageurs (gare SIV .40.12) ---------
+alert http any any -> 192.168.40.12 [80,8080] (msg:"TER-SIV information voyageurs incoherente"; flow:to_server,established; http.method; content:"POST"; threshold:type limit,track by_src,count 1,seconds 30; classtype:policy-violation; priority:2; sid:9300040; rev:1;)
+alert http any any -> 192.168.40.12 [80,8080] (msg:"TER-SIV annonce voyageurs modifiee"; flow:to_server,established; http.method; content:"POST"; threshold:type both,track by_src,count 3,seconds 30; classtype:attempted-admin; priority:1; sid:9300041; rev:1;)
+
+# --- TER-TELEM — lecture massive de télémétrie (proxy réseau de l'incohérence) -
+# Détection best-effort : l'incohérence de télémétrie est surtout corrélée côté
+# API ; ici on repère un balayage rapide des registres depuis une zone non-OT.
+alert modbus 192.168.30.0/24 any -> 192.168.20.10 502 (msg:"TER-TELEM lecture massive de la telemetrie"; flow:to_server,established; modbus:access read; threshold:type both,track by_src,count 20,seconds 10; classtype:attempted-recon; priority:2; sid:9300050; rev:1;)
+
+# --- TER-MGMT — accès aux interfaces d'administration de l'automate ------------
+alert http 192.168.30.0/24 any -> 192.168.20.10 [8080,8081] (msg:"TER-MGMT acces anormal a une interface d administration"; flow:to_server,established; threshold:type limit,track by_src,count 1,seconds 30; classtype:policy-violation; priority:2; sid:9300060; rev:1;)
+alert http 192.168.30.0/24 any -> 192.168.20.10 [8080,8081] (msg:"TER-MGMT tentative de connexion a l automate"; flow:to_server,established; http.method; content:"POST"; http.uri; content:"/login"; threshold:type both,track by_src,count 3,seconds 60; classtype:attempted-admin; priority:1; sid:9300061; rev:1;)

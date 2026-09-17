@@ -1,0 +1,18 @@
+# ============================================================================
+#  Jumeau numérique ferroviaire — fichiers non versionnés
+# ============================================================================
+
+# Modèle 3D source (148 Mo) — dépasse la limite de 100 Mo par fichier de GitHub.
+# Seul model-optimized.glb (8 Mo, versionné) est chargé par la vue 3D ; le .dae
+# reste sur disque (copié au build) mais hors dépôt.
+viewer3d-station-b/frontend/static/assets/extracted/electrical_substation/model.dae
+
+# Données d'exécution de l'API d'agrégation (base d'événements/alertes),
+# régénérées au fil des sessions.
+digital-twin-api/data/*.jsonl
+
+# Caches Python
+__pycache__/
+*.pyc
+
+# Le eve.json de Suricata vit dans le volume Docker suricata_eve, jamais ici.

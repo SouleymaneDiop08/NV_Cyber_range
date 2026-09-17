@@ -1,0 +1,125 @@
+import 'dotenv/config';
+import http from 'http';
+import express from 'express';
+import cors from 'cors';
+import { ModbusTCPClient } from './modbus/client.js';
+import { ModbusPoller } from './modbus/poller.js';
+import { DataNormalizer } from './normalizer/normalizer.js';
+import { WsBroadcaster } from './ws/broadcaster.js';
+import { createApiRouter } from './api/routes.js';
+import type { SystemSnapshot, RawModbusData } from './types/index.js';
+import { loadPlcMapping } from './config/loader.js';
+
+// ── Configuration ────────────────────────────────────────────
+const PORT             = parseInt(process.env.PORT            ?? '4000', 10);
+const POLL_INTERVAL_MS = parseInt(process.env.POLL_INTERVAL_MS ?? '500',  10);
+const STALE_TIMEOUT_MS = parseInt(process.env.STALE_TIMEOUT_MS ?? '3000', 10);
+const OFFLINE_TIMEOUT  = parseInt(process.env.OFFLINE_TIMEOUT_MS ?? '10000', 10);
+const CONNECT_TIMEOUT  = parseInt(process.env.MODBUS_CONNECT_TIMEOUT_MS ?? '5000', 10);
+const RECONNECT_DELAY  = parseInt(process.env.MODBUS_RECONNECT_DELAY_MS ?? '2000', 10);
+const CORS_ORIGIN      = process.env.CORS_ORIGIN ?? 'http://localhost:3000';
+
+// ── PLC config ───────────────────────────────────────────────
+const mapping = loadPlcMapping();
+const plcCfg = mapping.plcs['station_b'];
+if (!plcCfg) {
+  console.error('[Fatal] PLC station_b config not found in plc-mapping.yaml');
+  process.exit(1);
+}
+
+console.log(`[Init] TER MAP Backend`);
+console.log(`[Init] PLC: ${plcCfg.host}:${plcCfg.port} unit=${plcCfg.unit_id}`);
+console.log(`[Init] Poll: ${POLL_INTERVAL_MS}ms | Stale: ${STALE_TIMEOUT_MS}ms | Offline: ${OFFLINE_TIMEOUT}ms`);
+
+// ── State ────────────────────────────────────────────────────
+let currentSnapshot: SystemSnapshot | null = null;
+const normalizer = new DataNormalizer();
+
+// ── Express + HTTP server ────────────────────────────────────
+const app = express();
+app.use(cors({ origin: CORS_ORIGIN }));
+app.use(express.json());
+
+const server = http.createServer(app);
+
+// ── WebSocket broadcaster ─────────────────────────────────────
+const broadcaster = new WsBroadcaster(server);
+
+// ── Modbus client + poller ────────────────────────────────────
+const modbusClient = new ModbusTCPClient({
+  host: plcCfg.host,
+  port: plcCfg.port,
+  unitId: plcCfg.unit_id,
+  connectTimeoutMs: CONNECT_TIMEOUT,
+  reconnectDelayMs: RECONNECT_DELAY,
+});
+
+const poller = new ModbusPoller(modbusClient, {
+  pollIntervalMs: POLL_INTERVAL_MS,
+  staleTimeoutMs: STALE_TIMEOUT_MS,
+  offlineTimeoutMs: OFFLINE_TIMEOUT,
+});
+
+// ── Poller event handlers ─────────────────────────────────────
+poller.on('data', (raw: RawModbusData) => {
+  try {
+    const snap = normalizer.normalizeAll(raw, true, raw.latency_ms);
+    currentSnapshot = snap;
+    broadcaster.broadcast(snap);
+  } catch (err) {
+    console.error('[Normalizer] Error:', err);
+  }
+});
+
+poller.on('offline', () => {
+  const snap = normalizer.buildOfflineSnapshot();
+  currentSnapshot = snap;
+  broadcaster.broadcast(snap);
+  console.warn('[Poller] PLC offline — broadcasting offline snapshot');
+});
+
+poller.on('error', (err: unknown) => {
+  const msg = err instanceof Error ? err.message : typeof err === "string" ? err : JSON.stringify(err);
+  // Only log if not a routine "not connected" message to reduce noise
+  if (!msg.includes('not connected')) {
+    console.error('[Poller] Error:', msg);
+  }
+});
+
+poller.on('connection', (state: string) => {
+  console.log(`[Poller] PLC connection state: ${state}`);
+});
+
+// ── API routes ────────────────────────────────────────────────
+app.use('/api', createApiRouter(
+  () => currentSnapshot,
+  () => ({
+    isStale:   poller.isStale(),
+    isOffline: poller.isOffline(),
+    dataAgeMs: poller.getDataAge(),
+  }),
+  modbusClient,
+));
+
+// ── Start ─────────────────────────────────────────────────────
+server.listen(PORT, () => {
+  console.log(`[Server] Listening on http://0.0.0.0:${PORT}`);
+  console.log(`[Server] REST API: http://0.0.0.0:${PORT}/api`);
+  console.log(`[Server] WebSocket: ws://0.0.0.0:${PORT}/ws`);
+  poller.start();
+});
+
+// ── Graceful shutdown ─────────────────────────────────────────
+function shutdown(sig: string): void {
+  console.log(`\n[Server] Received ${sig}, shutting down...`);
+  poller.stop();
+  broadcaster.close();
+  server.close(() => {
+    console.log('[Server] Closed');
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 5000);
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT',  () => shutdown('SIGINT'));

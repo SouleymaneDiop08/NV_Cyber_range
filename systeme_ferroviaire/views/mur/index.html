@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mur de supervision — Cyber Digital Twin TER</title>
+<link rel="icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#04121a;--bg2:#07202b;--fg:#e6f6fb;--muted:#8bb1bf;--dim:#5d8593;
+  --panel:rgba(7,26,35,.72);--card:rgba(5,20,27,.55);
+  --line:rgba(34,211,238,.16);--line2:rgba(34,211,238,.34);
+  --cyan:#22d3ee;--cyanx:#7ef0ff;--orange:#ff9f2e;--red:#f2543d;--green:#3ddc91;
+  --shadow:0 30px 70px -34px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:
+    radial-gradient(1200px 700px at 78% -8%,var(--bg2),transparent 70%),
+    radial-gradient(900px 600px at 8% 108%,var(--bg2),transparent 70%),var(--bg);
+  color:var(--fg);font-family:Barlow,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;height:100vh;overflow:hidden;
+}
+a{color:inherit;text-decoration:none}
+
+/* ---- barre de titre ---- */
+header.wall-top{
+  flex:none;display:flex;align-items:center;gap:18px;
+  padding:10px 20px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,var(--panel),transparent);backdrop-filter:blur(10px);
+}
+.brand{display:flex;align-items:center;gap:12px}
+.brand img{height:34px;width:auto;filter:drop-shadow(0 0 14px rgba(34,211,238,.35))}
+.brand-t{font:600 13px/1.2 'Space Grotesk',sans-serif;letter-spacing:.16em}
+.brand-s{font:500 9.5px/1.2 'IBM Plex Mono',monospace;letter-spacing:.14em;color:var(--muted);margin-top:3px}
+.spacer{flex:1}
+.wall-state{
+  display:flex;align-items:center;gap:9px;padding:7px 15px;border-radius:99px;
+  border:1px solid var(--line2);background:var(--card);
+  font:600 10.5px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:var(--green);
+}
+.wall-state i{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor;flex:none}
+.wall-state.warn{color:var(--orange)}
+.wall-state.crit{color:var(--red);animation:pulse 1.2s ease-in-out infinite}
+.clock{font:600 15px/1 'IBM Plex Mono',monospace;letter-spacing:.05em;font-variant-numeric:tabular-nums}
+.op{font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:var(--muted);padding:6px 12px;border:1px solid var(--line2);border-radius:99px}
+
+/* ---- grille 2x2 ---- */
+.grid{
+  flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+  gap:10px;padding:10px;min-height:0;min-width:0;
+}
+.cell{
+  position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  background:#02090d;box-shadow:var(--shadow);min-height:0;min-width:0;
+  transition:border-color .3s ease,box-shadow .3s ease;
+}
+.cell.alert-warn{border-color:rgba(255,159,46,.6);box-shadow:0 0 0 1px rgba(255,159,46,.4),0 0 34px -10px rgba(255,159,46,.6)}
+.cell.alert-crit{border-color:rgba(242,84,61,.75);box-shadow:0 0 0 1px rgba(242,84,61,.5),0 0 40px -8px rgba(242,84,61,.75);animation:pulseCell 1.3s ease-in-out infinite}
+
+/* En-tête de compartiment */
+.cell-head{
+  position:absolute;top:0;left:0;right:0;z-index:3;
+  display:flex;align-items:center;gap:10px;
+  padding:8px 12px;
+  background:linear-gradient(180deg,rgba(2,9,13,.92),rgba(2,9,13,.45) 70%,transparent);
+  pointer-events:none;
+}
+.cell-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  font:600 11px/1 'Space Grotesk',sans-serif;letter-spacing:.06em;color:var(--fg);
+}
+.cell-badge i{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 9px currentColor;flex:none}
+.cell.alert-warn .cell-badge i{background:var(--orange)}
+.cell.alert-crit .cell-badge i{background:var(--red)}
+.cell-port{font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:var(--dim)}
+.cell-flag{
+  font:600 9px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:var(--red);
+  padding:3px 7px;border-radius:3px;background:rgba(242,84,61,.16);border:1px solid rgba(242,84,61,.35);
+}
+.cell.alert-warn .cell-flag{color:var(--orange);background:rgba(255,159,46,.15);border-color:rgba(255,159,46,.32)}
+.cell-actions{margin-left:auto;display:flex;gap:6px;pointer-events:auto}
+.cell-btn{
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--line2);border-radius:6px;background:rgba(4,18,26,.8);
+  color:var(--muted);cursor:pointer;font-size:13px;transition:.2s ease;
+}
+.cell-btn:hover{color:var(--fg);border-color:var(--cyan);background:rgba(7,26,35,.95)}
+
+/* Cadre live, mis à l'échelle pour rester lisible */
+.frame-wrap{position:absolute;inset:0;overflow:hidden;background:#02090d}
+.frame-wrap iframe{border:0;transform-origin:top left;background:#02090d;display:block}
+/* Voile de chargement */
+.cell-loading{
+  position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:12px;background:#02090d;color:var(--muted);
+  font:500 11px/1.4 'IBM Plex Mono',monospace;letter-spacing:.12em;transition:opacity .5s ease;
+}
+.cell-loading.gone{opacity:0;pointer-events:none}
+.spin{width:26px;height:26px;border:2px solid var(--line2);border-top-color:var(--cyan);border-radius:50%;animation:spin 1s linear infinite}
+
+/* Compartiment agrandi */
+.cell.max{position:fixed;inset:56px 10px 10px;z-index:50}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes pulseCell{0%,100%{box-shadow:0 0 0 1px rgba(242,84,61,.5),0 0 40px -8px rgba(242,84,61,.75)}50%{box-shadow:0 0 0 1px rgba(242,84,61,.7),0 0 52px -6px rgba(242,84,61,.95)}}
+
+@media (prefers-reduced-motion:reduce){
+  .cell.alert-crit,.wall-state.crit,.spin{animation:none}
+}
+</style>
+</head>
+<body>
+
+<header class="wall-top">
+  <div class="brand">
+    <img src="assets/logo.png" alt="Cyber Digital Twin">
+    <div>
+      <div class="brand-t">MUR DE SUPERVISION</div>
+      <div class="brand-s">TER · DAKAR — DIAMNIADIO</div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="wall-state" id="wall-state"><i></i><span>CONNEXION…</span></div>
+  <div class="clock" id="clock">--:--:--</div>
+  <div class="op">PCC · POSTE OPÉRATEUR</div>
+</header>
+
+<main class="grid" id="grid">
+  <!-- Les 4 compartiments sont générés par le script pour rester
+       cohérents (ports, échelle, boutons). -->
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---- destinations ----------------------------------------
+     Chaque vue est publiée sur deux ports : un en clair, un en
+     TLS. Le mur suit son propre protocole, sinon un mur en https
+     chargerait des iframes en http et le navigateur les
+     bloquerait (contenu mixte). Seul le port distingue les vues. */
+  var host = location.hostname || '10.5.6.3';
+  var secure = location.protocol === 'https:';
+  var proto = secure ? 'https:' : 'http:';
+
+  function urlFor(portHttp, portHttps) {
+    return proto + '//' + host + ':' + (secure ? portHttps : portHttp) + '/';
+  }
+
+  var VIEWS = [
+    { id: 'gare',       name: 'VUE GARE & ÉQUIPEMENTS', http: 3011, https: 8443 },
+    { id: 'globale',    name: 'SUPERVISION GLOBALE',    http: 3012, https: 8444 },
+    { id: 'circulation',name: 'CIRCULATION & INCIDENTS',http: 3001, https: 8445 },
+    { id: 'energie',    name: 'STATION ÉLECTRIQUE 3D',  http: 8090, https: 8446 }
+  ];
+
+  /* Largeur de conception : chaque vue est rendue à cette largeur
+     virtuelle puis réduite pour tenir dans le compartiment. On
+     conserve ainsi la lisibilité d'un plein écran, en miniature. */
+  var DESIGN_W = 1680;
+
+  var grid = document.getElementById('grid');
+
+  VIEWS.forEach(function (v) {
+    var cell = document.createElement('section');
+    cell.className = 'cell';
+    cell.id = 'cell-' + v.id;
+    cell.dataset.view = v.id;
+
+    var url = urlFor(v.http, v.https);
+
+    cell.innerHTML =
+      '<div class="frame-wrap"><iframe title="' + v.name + '" src="' + url + '" ' +
+        'allow="fullscreen" referrerpolicy="no-referrer"></iframe></div>' +
+      '<div class="cell-loading"><div class="spin"></div><div>CHARGEMENT · ' + v.name + '</div></div>' +
+      '<div class="cell-head">' +
+        '<span class="cell-badge"><i></i>' + v.name + '</span>' +
+        '<span class="cell-port">:' + (secure ? v.https : v.http) + '</span>' +
+        '<span class="cell-flag" hidden></span>' +
+        '<span class="cell-actions">' +
+          '<button class="cell-btn btn-max" title="Agrandir dans le mur" aria-label="Agrandir">⛶</button>' +
+          '<a class="cell-btn btn-open" href="' + url + '" target="_blank" rel="noopener" title="Ouvrir la vue en plein écran" aria-label="Ouvrir">↗</a>' +
+        '</span>' +
+      '</div>';
+
+    grid.appendChild(cell);
+
+    var iframe = cell.querySelector('iframe');
+    var loading = cell.querySelector('.cell-loading');
+    iframe.addEventListener('load', function () { loading.classList.add('gone'); });
+    /* Filet de sécurité : on retire le voile même si l'événement
+       load d'une origine tierce n'est pas notifié. */
+    setTimeout(function () { loading.classList.add('gone'); }, 6000);
+
+    /* Agrandir / réduire dans le mur */
+    cell.querySelector('.btn-max').addEventListener('click', function () {
+      var wasMax = cell.classList.contains('max');
+      document.querySelectorAll('.cell.max').forEach(function (c) { c.classList.remove('max'); });
+      if (!wasMax) cell.classList.add('max');
+      rescale();
+    });
+  });
+
+  /* ---- mise à l'échelle des cadres --------------------------
+     L'iframe est dessinée à DESIGN_W de large et à la hauteur qR
+     nécessaire pour remplir exactement le compartiment une fois
+     réduite. Aucune bande vide, aucune déformation. */
+  function rescale() {
+    document.querySelectorAll('.cell').forEach(function (cell) {
+      var wrap = cell.querySelector('.frame-wrap');
+      var iframe = cell.querySelector('iframe');
+      var w = wrap.clientWidth, h = wrap.clientHeight;
+      if (!w || !h) return;
+      var s = w / DESIGN_W;
+      iframe.style.width = DESIGN_W + 'px';
+      iframe.style.height = Math.ceil(h / s) + 'px';
+      iframe.style.transform = 'scale(' + s + ')';
+    });
+  }
+  window.addEventListener('resize', rescale);
+  /* La grille peut prendre un instant à se poser (polices, layout). */
+  requestAnimationFrame(rescale);
+  setTimeout(rescale, 300);
+  setTimeout(rescale, 1200);
+
+  /* ---- horloge ---- */
+  function tickClock() {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString('fr-FR', { hour12: false });
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  /* ---- surveillance légère pour la mise en évidence ----------
+     Le mur interroge lui-même la Digital Twin API (proxifiée en
+     même origine par son nginx) afin d'attirer l'œil vers le bon
+     compartiment quand un incident survient. Les vues restent la
+     source de vérité ; ceci n'est qu'un guidage visuel. */
+  var ACTIVE_MS = 60000;
+
+  function parseTs(v) {
+    if (!v) return NaN;
+    var d = Date.parse(v);
+    if (!isNaN(d)) return d;
+    return Date.parse(String(v).replace(/(\.\d{3})\d+/, '$1').replace(/([+-]\d{2})(\d{2})$/, '$1:$2'));
+  }
+  function ageMs(v) { var t = parseTs(v); return isNaN(t) ? Infinity : Date.now() - t; }
+
+  function setCell(id, level, flag) {
+    var cell = document.getElementById('cell-' + id);
+    if (!cell) return;
+    cell.classList.remove('alert-warn', 'alert-crit');
+    if (level) cell.classList.add(level === 'crit' ? 'alert-crit' : 'alert-warn');
+    var f = cell.querySelector('.cell-flag');
+    if (flag) { f.textContent = flag; f.hidden = false; } else { f.hidden = true; }
+  }
+
+  function setWallState(level, text) {
+    var el = document.getElementById('wall-state');
+    el.className = 'wall-state' + (level === 'crit' ? ' crit' : level === 'warn' ? ' warn' : '');
+    el.querySelector('span').textContent = text;
+  }
+
+  function poll() {
+    fetch('/api/twin/state', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); })
+      .then(function (d) {
+        var proc = d.process || {}, energy = d.energy || {};
+        var ctc = proc.ctc || {};
+        var tx = (energy.transformers || {});
+        var trains = proc.trains || [];
+
+        /* Alertes actives (fenêtre temps réel), par vue concernée */
+        var alerts = (d.alerts || []).filter(function (a) { return ageMs(a.timestamp) <= ACTIVE_MS; });
+        var reconOrGare = alerts.some(function (a) { return (a.views || []).indexOf('gare') !== -1; });
+
+        var collision = ctc.alm_collision === true;
+        var txCrit = (tx.tx1 && tx.tx1.alarm_critical) || (tx.tx2 && tx.tx2.alarm_critical);
+        var txHigh = (tx.tx1 && tx.tx1.alarm_high) || (tx.tx2 && tx.tx2.alarm_high);
+        var trainStopped = trains.some(function (t) { return t.train_en_marche === false || t.etat_train === 'arret' || t.etat_train === 'critique'; });
+
+        /* Compartiment ÉNERGIE (station 3D) */
+        setCell('energie', txCrit ? 'crit' : txHigh ? 'warn' : null,
+          txCrit ? 'TRANSFORMATEUR HORS SERVICE' : txHigh ? 'SURCHAUFFE' : null);
+
+        /* Compartiment CIRCULATION (ter-map) */
+        setCell('circulation', collision ? 'crit' : (ctc.risk_level > 0 ? 'warn' : (trainStopped ? 'warn' : null)),
+          collision ? 'COLLISION' : (trainStopped ? 'TRAIN IMMOBILISÉ' : null));
+
+        /* Compartiment GARE */
+        setCell('gare', reconOrGare ? 'warn' : null, reconOrGare ? 'ACTIVITÉ RÉSEAU' : null);
+
+        /* Compartiment SUPERVISION GLOBALE : reçoit le plus grave */
+        var globalLevel = (collision || txCrit) ? 'crit' : (txHigh || trainStopped || alerts.length) ? 'warn' : null;
+        var globalFlag = collision ? 'COLLISION' : txCrit ? 'TRANSFORMATEUR HORS SERVICE'
+          : txHigh ? 'SURCHAUFFE' : alerts.length ? 'ALERTE' : null;
+        setCell('globale', globalLevel, globalFlag);
+
+        /* Bandeau global du mur */
+        if (collision) setWallState('crit', 'COLLISION FERROVIAIRE');
+        else if (txCrit) setWallState('crit', 'TRANSFORMATEUR HORS SERVICE');
+        else if (txHigh || trainStopped) setWallState('warn', 'EXPLOITATION DÉGRADÉE');
+        else if (alerts.length) setWallState('warn', alerts.length + ' ALERTE(S) ACTIVE(S)');
+        else setWallState('ok', 'SUPERVISION NOMINALE');
+      })
+      .catch(function () {
+        setWallState('warn', 'SUPERVISION — LIEN LIMITÉ');
+      });
+  }
+  poll();
+  setInterval(poll, 3000);
+})();
+</script>
+</body>
+</html>

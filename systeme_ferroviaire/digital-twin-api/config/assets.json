@@ -1,0 +1,98 @@
+{
+  "192.168.10.10": {
+    "name": "PLC Station A",
+    "zone": "station_a",
+    "business_role": "Automate Station A",
+    "type": "plc"
+  },
+  "192.168.10.20": {
+    "name": "SCADA Station A",
+    "zone": "station_a",
+    "business_role": "Supervision locale Station A",
+    "type": "scada"
+  },
+  "192.168.20.10": {
+    "name": "Automate énergie traction",
+    "zone": "station_b",
+    "business_role": "Automate énergie traction et procédé ferroviaire",
+    "type": "plc"
+  },
+  "192.168.20.20": {
+    "name": "SCADA local gare",
+    "zone": "station_b",
+    "business_role": "Supervision locale de la gare",
+    "type": "scada"
+  },
+  "192.168.20.90": {
+    "name": "Vue 3D énergie traction",
+    "zone": "station_b",
+    "business_role": "Visualisation 3D de la sous-station électrique",
+    "type": "view"
+  },
+  "192.168.30.10": {
+    "name": "SCADA central",
+    "zone": "central",
+    "business_role": "Supervision centrale",
+    "type": "scada"
+  },
+  "192.168.30.20": {
+    "name": "Poste ingénierie",
+    "zone": "central",
+    "business_role": "Maintenance et ingénierie",
+    "type": "engineering_workstation"
+  },
+  "192.168.30.30": {
+    "name": "Source inconnue",
+    "zone": "central",
+    "business_role": "Origine non identifiée",
+    "type": "attacker"
+  },
+  "192.168.30.50": {
+    "name": "Capteur OT",
+    "zone": "central",
+    "business_role": "Capture réseau, Suricata, Zeek et PCAP",
+    "type": "sensor"
+  },
+  "192.168.30.60": {
+    "name": "Portail Cyber Range",
+    "zone": "central",
+    "business_role": "Portail utilisateur",
+    "type": "portal"
+  },
+  "192.168.40.11": {
+    "name": "Billettique Gare",
+    "zone": "services_gare",
+    "business_role": "Service de vente et validation",
+    "type": "ticketing"
+  },
+  "192.168.40.12": {
+    "name": "SIV Gare",
+    "zone": "services_gare",
+    "business_role": "Information voyageurs",
+    "type": "passenger_information"
+  },
+  "192.168.40.13": {
+    "name": "SONO Gare",
+    "zone": "services_gare",
+    "business_role": "Annonces voyageurs",
+    "type": "public_address"
+  },
+  "192.168.40.14": {
+    "name": "PIPC",
+    "zone": "services_gare",
+    "business_role": "Interface CTC et signalisation",
+    "type": "ctc"
+  },
+  "192.168.40.15": {
+    "name": "CCTV / VMS Gare",
+    "zone": "services_gare",
+    "business_role": "Vidéosurveillance",
+    "type": "video"
+  },
+  "192.168.40.88": {
+    "name": "Source inconnue",
+    "zone": "services_gare",
+    "business_role": "Origine non identifiée",
+    "type": "attacker"
+  }
+}

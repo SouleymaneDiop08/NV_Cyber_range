@@ -1,0 +1,417 @@
+name: digital_twin_ferroviaire
+
+# ============================================================================
+#  JUMEAU NUMÉRIQUE FERROVIAIRE — TER Dakar / Diamniadio
+#  Compose unifié et autonome : les 4 vues + leur socle de données.
+#
+#  Chaîne : PLC Station B (simulation train/énergie, Modbus TCP)
+#             │
+#             ├── ter-map-backend  (poll Modbus → positions/incidents)
+#             ├── viewer3d         (poll Modbus → énergie/transformateurs)
+#             └── digital_twin_api (agrège ter-map + viewer3d + services gare)
+#                    │
+#                    ├── vue_gare      (3011)  représentation physique gare
+#                    ├── vue_globale   (3012)  supervision globale / PCC
+#                    └── mur           (3013)  mur d'écrans consolidé
+#             + ter-frontend (3001) circulation & incidents (ter-map)
+#             + viewer3d     (8090) vue 3D sous-station électrique
+#
+#  Lancement :   docker compose up -d --build
+#  Arrêt     :   docker compose down
+#
+#  NB : ni HTTPS ni landing page (non inclus, sur demande).
+#       Les alertes réseau Suricata/Oculox ne sont pas incluses (stack séparée) ;
+#       les scénarios physiques (collision, explosion transformateur, survitesse)
+#       restent pleinement fonctionnels car dérivés du PLC via ter-map/viewer3d.
+# ============================================================================
+
+services:
+
+  # ── Simulation : automate énergie traction + procédé (OpenPLC) ───────────
+  plc_station_b:
+    build: ./station_b/plc_b/
+    container_name: dtf_plc_station_b
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN            # pour les `ip route add` de l'entrypoint (|| true)
+    networks:
+      l2_network:
+        ipv4_address: 192.168.20.10
+    ports:
+      - "8081:8080"          # interface web OpenPLC
+
+  # ── Vue 3D sous-station électrique (lecture Modbus directe du PLC) ───────
+  viewer3d_station_b:
+    build: ./viewer3d-station-b/
+    container_name: dtf_viewer3d_station_b
+    restart: unless-stopped
+    depends_on:
+      - plc_station_b
+    networks:
+      l2_network:
+        ipv4_address: 192.168.20.90
+    ports:
+      - "8090:8090"
+    environment:
+      PLC_HOST: 192.168.20.10
+      PLC_PORT: 502
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/api/status')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── ter-map backend : poll Modbus → positions, vitesses, incidents ───────
+  ter_backend:
+    build:
+      context: ./ter-map/backend
+      dockerfile: Dockerfile
+    container_name: ter-map-backend      # nom attendu par digital_twin_api
+    restart: unless-stopped
+    depends_on:
+      - plc_station_b
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      PLC_B_HOST: 192.168.20.10
+      PLC_B_PORT: "502"
+      PLC_B_UNIT_ID: "1"
+      POLL_INTERVAL_MS: "500"
+      STALE_TIMEOUT_MS: "3000"
+      OFFLINE_TIMEOUT_MS: "10000"
+      CORS_ORIGIN: "http://localhost:3001"
+    ports:
+      - "4000:4000"
+    networks:
+      ter_internal:
+        aliases:
+          - ter-backend                   # nom attendu par le nginx du frontend
+      l2_network:
+        ipv4_address: 192.168.20.60       # accès direct au PLC Station B
+    volumes:
+      - ./ter-map/config:/app/config:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── ter-map frontend : carte circulation & incidents (React/Vite) ────────
+  ter_frontend:
+    build:
+      context: ./ter-map/frontend
+      dockerfile: Dockerfile
+    container_name: ter-map-frontend
+    restart: unless-stopped
+    depends_on:
+      ter_backend:
+        condition: service_healthy
+    networks:
+      - ter_internal
+    ports:
+      - "3001:80"
+
+  # ── Services métier de la gare (SIV, SONO, PIPC, CCTV, billettique) ──────
+  gare_billettique:
+    build: ./services-gare/
+    container_name: dtf_gare_billettique
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN            # ip route replace vers .20/.30 (start.sh)
+    networks:
+      services_gare_network:
+        ipv4_address: 192.168.40.11
+    environment:
+      SERVICE_NAME: "Billettique Gare"
+      SERVICE_KIND: "ticketing"
+      SERVICE_IP: "192.168.40.11"
+      PORT: "8080"
+    expose:
+      - "8080"
+
+  gare_siv:
+    build: ./services-gare/
+    container_name: dtf_gare_siv
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN            # ip route replace vers .20/.30 (start.sh)
+    networks:
+      services_gare_network:
+        ipv4_address: 192.168.40.12
+    environment:
+      SERVICE_NAME: "SIV Gare"
+      SERVICE_KIND: "siv"
+      SERVICE_IP: "192.168.40.12"
+      PORT: "8080"
+    expose:
+      - "8080"
+
+  gare_sono:
+    build: ./services-gare/
+    container_name: dtf_gare_sono
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN            # ip route replace vers .20/.30 (start.sh)
+    networks:
+      services_gare_network:
+        ipv4_address: 192.168.40.13
+    environment:
+      SERVICE_NAME: "SONO Gare"
+      SERVICE_KIND: "sono"
+      SERVICE_IP: "192.168.40.13"
+      PORT: "8080"
+    expose:
+      - "8080"
+
+  gare_pipc:
+    build: ./services-gare/
+    container_name: dtf_gare_pipc
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN            # ip route replace vers .20/.30 (start.sh)
+    networks:
+      services_gare_network:
+        ipv4_address: 192.168.40.14
+    environment:
+      SERVICE_NAME: "PIPC simulé"
+      SERVICE_KIND: "pipc"
+      SERVICE_IP: "192.168.40.14"
+      PORT: "8080"
+    expose:
+      - "8080"
+
+  gare_cctv:
+    build: ./services-gare/
+    container_name: dtf_gare_cctv
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN            # ip route replace vers .20/.30 (start.sh)
+    networks:
+      services_gare_network:
+        ipv4_address: 192.168.40.15
+    environment:
+      SERVICE_NAME: "CCTV / VMS Gare"
+      SERVICE_KIND: "cctv"
+      SERVICE_IP: "192.168.40.15"
+      PORT: "8080"
+    expose:
+      - "8080"
+
+  # ── API jumeau numérique : agrégation et corrélation ─────────────────────
+  digital_twin_api:
+    build: ./digital-twin-api/
+    container_name: dtf_digital_twin_api
+    restart: unless-stopped
+    depends_on:
+      - plc_station_b
+      - viewer3d_station_b
+      - ter_backend
+    networks:
+      l2_network:
+        ipv4_address: 192.168.20.70
+      l3_network:
+        ipv4_address: 192.168.30.70
+      services_gare_network:
+        ipv4_address: 192.168.40.70
+    ports:
+      - "4010:4010"
+    environment:
+      PORT: "4010"
+      TER_MAP_URL: "http://ter-map-backend:4000"
+      VIEWER3D_URL: "http://viewer3d_station_b:8090"
+      OCULOX_PROVIDER: "oculox-eve"
+      OCULOX_EVE_PATH: "/oculox-live"     # alimenté par l'eve.json de Suricata (dtf_ids)
+      EVENT_DB_PATH: "/data/events.jsonl"
+      ALERT_RULE_PREFIX: "930"
+      ALERT_DEDUP_MS: "60000"
+      POLL_MS: "1000"
+      ALERT_POLL_MS: "5000"
+    volumes:
+      - suricata_eve:/oculox-live:ro       # eve.json produit par Suricata (dtf_ids)
+      - ./digital-twin-api/data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4010/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── Vue 1 : représentation physique de la gare & équipements ─────────────
+  vue_gare:
+    build: ./views/vue-gare/
+    container_name: dtf_vue_gare
+    restart: unless-stopped
+    # Route L3 -> L2/L40 via le routeur : cette vue (.30) peut joindre le PLC .20
+    # et la gare .40. Les données fonctionnelles passent par digital_twin_api
+    # (même origine) ; ceci ouvre la voie réseau attendue entre .30 et .20/.40.
+    cap_add:
+      - NET_ADMIN
+    entrypoint:
+      - /bin/sh
+      - -c
+      - 'ip route add 192.168.20.0/24 via 192.168.30.253 2>/dev/null || true; ip route add 192.168.40.0/24 via 192.168.30.253 2>/dev/null || true; exec /docker-entrypoint.sh "$$@"'
+      - --
+    command: ["nginx", "-g", "daemon off;"]
+    depends_on:
+      - digital_twin_api
+    networks:
+      l3_network:
+        ipv4_address: 192.168.30.71
+    ports:
+      - "3011:80"
+
+  # ── Vue 2 : supervision globale / PCC ────────────────────────────────────
+  vue_globale:
+    build: ./views/vue-globale/
+    container_name: dtf_vue_globale
+    restart: unless-stopped
+    # Route L3 -> L2/L40 via le routeur : cette vue (.30) peut joindre le PLC .20
+    # et la gare .40. Les données fonctionnelles passent par digital_twin_api
+    # (même origine) ; ceci ouvre la voie réseau attendue entre .30 et .20/.40.
+    cap_add:
+      - NET_ADMIN
+    entrypoint:
+      - /bin/sh
+      - -c
+      - 'ip route add 192.168.20.0/24 via 192.168.30.253 2>/dev/null || true; ip route add 192.168.40.0/24 via 192.168.30.253 2>/dev/null || true; exec /docker-entrypoint.sh "$$@"'
+      - --
+    command: ["nginx", "-g", "daemon off;"]
+    depends_on:
+      - digital_twin_api
+    networks:
+      l3_network:
+        ipv4_address: 192.168.30.72
+    ports:
+      - "3012:80"
+
+  # ── Vue 4 (consolidation) : mur d'écrans temps réel ──────────────────────
+  mur:
+    build: ./views/mur/
+    container_name: dtf_mur
+    restart: unless-stopped
+    # Route L3 -> L2/L40 via le routeur : le mur (.30) peut joindre le PLC .20
+    # et la gare .40. Les données fonctionnelles passent par digital_twin_api
+    # (même origine) ; ceci ouvre la voie réseau attendue entre .30 et .20/.40.
+    cap_add:
+      - NET_ADMIN
+    entrypoint:
+      - /bin/sh
+      - -c
+      - 'ip route add 192.168.20.0/24 via 192.168.30.253 2>/dev/null || true; ip route add 192.168.40.0/24 via 192.168.30.253 2>/dev/null || true; exec /docker-entrypoint.sh "$$@"'
+      - --
+    command: ["nginx", "-g", "daemon off;"]
+    depends_on:
+      - digital_twin_api
+    networks:
+      l3_network:
+        ipv4_address: 192.168.30.75
+    ports:
+      - "3013:80"
+
+  # ── Poste attaquant Kali (cartographie réseau + scénarios ICS) ───────────
+  #  Réutilise l'image déjà présente sur l'hôte (talixman-dispatching-kali-attacker)
+  #  au lieu de la reconstruire : elle est bâtie depuis le Dockerfile de
+  #  ./kali-attacker (mêmes scripts /opt/tools, même entrypoint, mêmes ports).
+  #  Placé directement sur l2_network — ce compose autonome n'a pas de routeurs,
+  #  donc l'accès au PLC Station B (192.168.20.10:502) visé par les scénarios se
+  #  fait sur le segment industriel lui-même. Les scripts d'attaque, absents de
+  #  l'image, sont montés depuis ./scenarios.
+  kali_attacker:
+    image: talixman-dispatching-kali-attacker:latest
+    container_name: dtf_kali_attacker
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN            # setcap + ip route de start.sh
+      - NET_RAW              # sockets bruts (nmap, ping, hping3)
+    depends_on:
+      - plc_station_b
+    networks:
+      l3_network:
+        ipv4_address: 192.168.30.30      # attaquant en L3 ; atteint L2/L40 via le routeur
+    ports:
+      - "6080:6080"          # bureau noVNC (navigateur)
+      - "5901:5900"          # VNC direct
+      - "2222:22"            # SSH (kali:kali / root:toor)
+      - "5055:5000"          # NetCarto — cartographie réseau temps réel
+    volumes:
+      - ./scenarios:/opt/scenarios:ro   # ctc.py, feeder.py, netcarto.py
+    environment:
+      RESOLUTION: "1280x720"
+    # Le start.sh de l'image ajoute déjà la route vers L2 (.20 via 192.168.30.253).
+    # On préfixe l'ajout de la route vers L40 (.40) — non gérée par start.sh — puis
+    # on relance le start.sh d'origine avec sa commande (supervisord). $$@ = $@ littéral
+    # (le compose interprète un simple $).
+    entrypoint:
+      - /bin/bash
+      - -c
+      - 'ip route replace 192.168.40.0/24 via 192.168.30.253 2>/dev/null || true; exec /usr/local/bin/start.sh "$$@"'
+      - --
+    command: ["supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+
+  # ── Routeur inter-VLAN : relie L3 (.30) à L2 (.20) et L40 (.40) ───────────
+  #  Routage IP pur (ip_forward + réseaux connectés), sans iptables ni NAT.
+  #  Les autres conteneurs pointent déjà leurs routes vers ses adresses
+  #  .254/.253 (kali → .20/.40 via .30.253 ; plc → .30/.40 via .20.254 ;
+  #  gare → .20/.30 via .40.254).
+  router:
+    build: ./router/
+    container_name: dtf_router
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      l2_network:
+        ipv4_address: 192.168.20.254
+      l3_network:
+        ipv4_address: 192.168.30.253
+      services_gare_network:
+        ipv4_address: 192.168.40.254
+
+  # ── IDS Suricata : inspecte le trafic inter-VLAN au niveau du routeur ─────
+  #  Partage la pile réseau du routeur (network_mode: service:router) → voit
+  #  ses interfaces eth0 (.30) et eth1 (.40), là où transite tout le trafic
+  #  d'attaque .30/.40 -> .20. Écrit eve.json dans le volume suricata_eve, que
+  #  digital_twin_api lit via son provider oculox-eve (aucun OpenSearch requis).
+  ids:
+    image: jasonish/suricata:7.0
+    container_name: dtf_ids
+    restart: unless-stopped
+    depends_on:
+      - router
+    network_mode: "service:router"     # partage les interfaces du routeur
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW                        # capture af-packet
+    entrypoint: ["/usr/bin/suricata"]
+    command: ["-c", "/etc/suricata/suricata.yaml", "--af-packet"]
+    volumes:
+      - ./ids/suricata.yaml:/etc/suricata/suricata.yaml:ro
+      - ./ids/ferroviaire.rules:/etc/suricata/rules/ferroviaire.rules:ro
+      - suricata_eve:/var/log/suricata
+
+networks:
+  l2_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.20.0/24
+  l3_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.30.0/24
+  services_gare_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.40.0/24
+  ter_internal:
+    driver: bridge
+
+volumes:
+  # eve.json de Suricata, partagé entre dtf_ids (écriture) et digital_twin_api
+  # (lecture via le provider oculox-eve).
+  suricata_eve:

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vue globale — Jumeau numérique TER Dakar / Diamniadio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark"><span></span></div>
+    <div>
+      <div class="brand-title">VUE GLOBALE D’EXPLOITATION</div>
+      <div class="brand-sub">TER · DAKAR — DIAMNIADIO</div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="link-block">
+    <div class="link-state" id="link-state">CONNEXION…</div>
+    <div class="source-chips" id="source-chips"></div>
+  </div>
+
+  <div class="spacer"></div>
+
+  <div class="mode-badge" id="mode-badge"><i></i><span>CONNEXION…</span></div>
+  <div class="clock" id="clock">--:--<small>:--</small></div>
+  <div class="operator"><div class="avatar">OP</div><span>Poste opérateur</span></div>
+</header>
+
+<!-- Bandeau de collision : masqué tant qu'aucune collision n'est
+     confirmée par la signalisation. Rempli par renderCollisionBanner. -->
+<div class="collision-banner" id="collision-banner" role="alert" aria-live="assertive"></div>
+
+<main class="layout">
+
+  <!-- ================= COLONNE GAUCHE ================= -->
+  <section class="col col-left">
+    <div class="panel panel-state">
+      <div class="panel-title">ÉTAT DU SYSTÈME</div>
+      <div class="state-head">
+        <div class="state-value" id="state-value">—</div>
+        <div class="state-sub" id="state-sub"></div>
+      </div>
+      <div class="hr"></div>
+      <div class="kpi-list" id="kpi-list"></div>
+      <div class="hr"></div>
+      <div class="health">
+        <div class="health-head">
+          <span>INDICATEUR DE SANTÉ</span>
+          <span class="health-num"><b id="health-num">—</b>%</span>
+        </div>
+        <div class="health-bar"><div id="health-fill"></div></div>
+        <div class="health-trend" id="health-trend"></div>
+      </div>
+      <div class="grow"></div>
+      <div class="situation">
+        <div class="situation-title" id="situation-title">DERNIER POINT DE SITUATION</div>
+        <p class="situation-text" id="situation-text"></p>
+      </div>
+    </div>
+
+    <div class="panel panel-flows">
+      <div class="panel-title" id="flows-title">COMMUNICATIONS OBSERVÉES</div>
+      <div class="flow-list" id="flow-list"></div>
+      <div class="oculox-foot">
+        <div>
+          <div class="of-t">Supervision des flux réseau</div>
+          <div class="of-s">Observation du trafic miroir du réseau industriel</div>
+        </div>
+        <div class="of-time" id="oculox-last">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= COLONNE CENTRALE ================= -->
+  <section class="col col-center">
+
+    <div class="panel panel-synoptic">
+      <div class="syn-head">
+        <div class="syn-head-l">
+          <div class="panel-title">SYNOPTIQUE LIGNE</div>
+          <div class="syn-note" id="syn-note">Phase Dakar — Diamniadio</div>
+        </div>
+        <div class="legend" id="legend">
+          <span class="lg"><i class="lg-rail"></i>VOIE FERRÉE</span>
+          <span class="lg"><i class="lg-power"></i>ALIMENTATION</span>
+          <span class="lg"><i class="lg-flux"></i>SUPERVISION</span>
+          <span class="lg"><i class="lg-train"></i>TRAIN</span>
+          <span class="lg"><i class="lg-alert"></i>COMMUNICATION SIGNALÉE</span>
+        </div>
+      </div>
+
+      <div class="syn-wrap">
+        <button type="button" class="syn-nav syn-nav-l" id="syn-left" aria-label="Défiler le synoptique vers la gauche">‹</button>
+        <button type="button" class="syn-nav syn-nav-r" id="syn-right" aria-label="Défiler le synoptique vers la droite">›</button>
+        <div class="syn-scroll" id="syn-scroll" tabindex="0" role="region" aria-label="Synoptique de la ligne, défilement horizontal">
+          <div class="syn-canvas" id="syn-canvas"></div>
+        </div>
+      </div>
+
+      <div class="syn-foot">
+        <span id="syn-status">—</span>
+        <span class="syn-foot-r">SYNOPTIQUE SCHÉMATIQUE — NON GÉOGRAPHIQUE</span>
+      </div>
+    </div>
+
+    <div class="cards-row">
+      <div class="panel card-sm">
+        <div class="card-head"><span class="panel-title">TRAINS</span><span class="card-tag" id="trains-tag">—</span></div>
+        <div id="trains-list" class="train-rows"></div>
+        <div class="card-note" id="trains-note"></div>
+      </div>
+
+      <div class="panel card-sm">
+        <div class="card-head"><span class="panel-title">SERVICES GARE</span><span class="card-tag" id="services-tag">—</span></div>
+        <div id="services-list" class="service-rows"></div>
+        <div class="card-note" id="services-note"></div>
+      </div>
+
+      <div class="panel card-sm">
+        <div class="card-head"><span class="panel-title">ÉNERGIE · TRACTION</span><span class="card-tag" id="energie-tag">—</span></div>
+        <div class="energy-metrics" id="energy-metrics"></div>
+        <div id="energy-rows" class="energy-rows"></div>
+      </div>
+    </div>
+
+    <div class="panel panel-timeline">
+      <div class="card-head">
+        <span class="panel-title" id="timeline-title">JOURNAL DES ÉVÉNEMENTS</span>
+        <span class="tl-counts" id="tl-counts"></span>
+      </div>
+      <div class="tl-scroll"><div class="tl-track" id="timeline"></div></div>
+    </div>
+  </section>
+
+  <!-- ================= COLONNE DROITE ================= -->
+  <section class="col col-right">
+    <div class="panel panel-incident" id="incident-panel">
+      <div class="card-head">
+        <span class="panel-title" id="incident-title">INCIDENTS ACTIFS</span>
+        <span class="card-tag" id="incident-tag">—</span>
+      </div>
+      <div id="incident-body"></div>
+    </div>
+
+    <div class="panel card-cyber">
+      <div class="card-head"><span class="panel-title">SUPERVISION CYBER</span><span class="card-tag" id="cyber-tag">—</span></div>
+      <div class="cyber-stats" id="cyber-stats"></div>
+      <div class="cyber-biz">
+        <div class="cb-t" id="cyber-biz-title">DERNIER ÉVÉNEMENT</div>
+        <div class="cb-b" id="cyber-biz-body"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="assets/js/data-stations.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/mapper.js"></script>
+<script src="assets/js/synoptic.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

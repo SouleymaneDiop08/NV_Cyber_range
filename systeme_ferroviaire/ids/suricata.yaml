@@ -1,0 +1,70 @@
+%YAML 1.1
+---
+# Configuration Suricata minimale pour le jumeau ferroviaire.
+# IDS af-packet sur les interfaces du routeur (partagées via network_mode).
+# Modbus app-layer ACTIVÉ (indispensable pour les règles TER-*).
+
+vars:
+  address-groups:
+    HOME_NET: "[192.168.20.0/24,192.168.30.0/24,192.168.40.0/24]"
+    EXTERNAL_NET: "any"
+  port-groups:
+    HTTP_PORTS: "[80,8080,8081]"
+    MODBUS_PORTS: "502"
+
+default-log-dir: /var/log/suricata/
+
+# Fichiers de classification fournis par l'image OISF.
+classification-file: /etc/suricata/classification.config
+reference-config-file: /etc/suricata/reference.config
+threshold-file: /etc/suricata/threshold.config
+
+default-rule-path: /etc/suricata/rules
+rule-files:
+  - ferroviaire.rules
+
+app-layer:
+  protocols:
+    modbus:
+      enabled: yes
+      detection-ports:
+        dp: 502
+    http:
+      enabled: yes
+    tls:
+      enabled: no
+
+# On écoute les deux côtés « source » du routeur : eth0 (.30, attaquant) et
+# eth1 (.40, gare). Le flux inter-zone y transite dans les deux sens, donc
+# Suricata voit l'échange Modbus complet. eth2 (.20) n'est pas écoutée pour
+# éviter de compter deux fois la trame déjà vue en entrée.
+af-packet:
+  - interface: eth0
+    cluster-id: 98
+    cluster-type: cluster_flow
+    defrag: yes
+    use-mmap: yes
+  - interface: eth1
+    cluster-id: 97
+    cluster-type: cluster_flow
+    defrag: yes
+    use-mmap: yes
+
+outputs:
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: eve.json
+      types:
+        - alert:
+            metadata: yes
+            tagged-packets: no
+
+stats:
+  enabled: no
+
+logging:
+  default-log-level: notice
+  outputs:
+    - console:
+        enabled: yes

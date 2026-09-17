@@ -1,0 +1,972 @@
+/* ============================================================
+   TER MAP — Global Styles + Design Tokens
+   ISA-101 High-Performance HMI inspired dark theme
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS Design Tokens ─────────────────────────────────────── */
+:root {
+  /* Surface palette (light theme) */
+  --surface-primary:    #F8FAFC;
+  --surface-secondary:  #F1F5F9;
+  --surface-elevated:   #FFFFFF;
+  --surface-border:     #E2E8F0;
+  --surface-muted:      #94A3B8;
+
+  /* Text */
+  --text-primary:   #0F172A;
+  --text-secondary: #475569;
+  --text-muted:     #94A3B8;
+  --text-inverse:   #F8FAFC;
+
+  /* Semantic colors */
+  --color-ok:       #27AE60;
+  --color-warning:  #F39C12;
+  --color-critical: #E74C3C;
+  --color-offline:  #607D8B;
+  --color-info:     #0288D1;
+
+  /* TER brand */
+  --color-dkr:      #2EC5A4;
+  --color-dmd:      #F5A623;
+
+  /* Map overlay */
+  --map-overlay-bg: rgba(248, 250, 252, 0.90);
+}
+
+.dark {
+  /* Surface palette (dark theme — ISA-101 dark) */
+  --surface-primary:    #0D1117;
+  --surface-secondary:  #161B22;
+  --surface-elevated:   #21262D;
+  --surface-border:     #30363D;
+  --surface-muted:      #8B949E;
+
+  /* Text */
+  --text-primary:   #E6EDF3;
+  --text-secondary: #8B949E;
+  --text-muted:     #6E7681;
+  --text-inverse:   #0D1117;
+
+  /* Map overlay */
+  --map-overlay-bg: rgba(13, 17, 23, 0.90);
+}
+
+/* ── Base ──────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+#root {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Leaflet overrides ─────────────────────────────────────── */
+.leaflet-container {
+  background: #1a1f2e !important;
+  font-family: 'IBM Plex Mono', monospace !important;
+}
+
+.leaflet-control-zoom {
+  border: 1px solid var(--surface-border) !important;
+  border-radius: 6px !important;
+  overflow: hidden;
+}
+
+.dark .leaflet-control-zoom a {
+  background: #21262D !important;
+  color: #8B949E !important;
+  border-color: #30363D !important;
+}
+
+.dark .leaflet-control-zoom a:hover {
+  background: #30363D !important;
+  color: #E6EDF3 !important;
+}
+
+.dark .leaflet-control-attribution {
+  background: rgba(13,17,23,0.7) !important;
+  color: #6E7681 !important;
+  font-size: 10px !important;
+}
+
+.dark .leaflet-control-attribution a {
+  color: #8B949E !important;
+}
+
+/* Station tooltip */
+.ter-station-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.ter-station-tooltip::before {
+  display: none !important;
+}
+
+.leaflet-tooltip.ter-station-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Popup */
+.ter-popup .leaflet-popup-content-wrapper {
+  background: var(--surface-secondary) !important;
+  border: 1px solid var(--surface-border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4) !important;
+  color: var(--text-primary) !important;
+}
+
+.ter-popup .leaflet-popup-tip {
+  background: var(--surface-secondary) !important;
+}
+
+.ter-popup .leaflet-popup-content {
+  margin: 0 !important;
+}
+
+/* ── Collision animations ──────────────────────────────────── */
+@keyframes collision-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+@keyframes collision-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes ter-banner-flash {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(231,76,60,0.4); }
+  50% { opacity: 0.9; box-shadow: 0 0 0 6px rgba(231,76,60,0); }
+}
+
+@keyframes siv-ring-pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.ter-siv-ghost {
+  position: relative;
+  width: 92px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.ter-siv-pulse {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  border: 2px solid #ff2d6f;
+  background: rgba(255, 45, 111, 0.20);
+  animation: siv-ring-pulse 1.2s ease-out infinite;
+}
+
+.ter-siv-card {
+  position: relative;
+  z-index: 1;
+  border: 1px solid rgba(255, 45, 111, 0.95);
+  background: rgba(63, 8, 28, 0.92);
+  box-shadow: 0 0 18px rgba(255, 45, 111, 0.42);
+  color: #fff;
+  border-radius: 8px;
+  padding: 5px 8px;
+  text-align: center;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.ter-siv-title {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #ffb3c9;
+}
+
+.ter-siv-train {
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+/* ── SIV / SONO passenger boards ───────────────────────────── */
+.ter-siv-board-layer {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 28px;
+  z-index: 980;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr);
+  gap: 16px;
+  pointer-events: none;
+}
+
+.ter-passenger-board {
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(46, 197, 164, 0.45);
+  background:
+    linear-gradient(180deg, rgba(3, 12, 26, 0.94), rgba(1, 6, 15, 0.92)),
+    repeating-linear-gradient(0deg, rgba(46,197,164,0.08), rgba(46,197,164,0.08) 1px, transparent 1px, transparent 4px);
+  box-shadow: 0 18px 45px rgba(0,0,0,0.45), inset 0 0 22px rgba(46,197,164,0.08);
+  backdrop-filter: blur(8px);
+  color: #dffcf4;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.ter-passenger-board-alert {
+  border-color: rgba(255, 45, 111, 0.95);
+  box-shadow: 0 18px 45px rgba(0,0,0,0.50), 0 0 28px rgba(255,45,111,0.30);
+}
+
+.ter-passenger-board-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px 4px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #55f5d2;
+}
+
+.ter-passenger-board-alert .ter-passenger-board-head {
+  color: #ff7aa5;
+}
+
+.ter-passenger-board-subtitle {
+  padding: 0 12px 8px;
+  font-size: 10px;
+  color: rgba(223, 252, 244, 0.58);
+}
+
+.ter-passenger-marquee {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  height: 36px;
+  display: flex;
+  align-items: center;
+}
+
+.ter-passenger-marquee span {
+  display: inline-block;
+  flex-shrink: 0;
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+  color: #effffb;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  animation: passenger-marquee 42s linear infinite;
+}
+
+.ter-passenger-board-alert .ter-passenger-marquee span {
+  color: #ffd8e4;
+  animation-duration: 34s;
+}
+
+@keyframes passenger-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+@media (max-width: 900px) {
+  .ter-siv-board-layer {
+    grid-template-columns: 1fr;
+    bottom: 18px;
+  }
+
+  .ter-passenger-marquee span {
+    font-size: 12px;
+  }
+}
+
+/* Train marker pulse states */
+.ter-train-warning .ter-train-body {
+  animation: pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(243,156,18,0.4);
+}
+
+.ter-train-danger .ter-train-body {
+  animation: danger-pulse 0.6s ease-in-out infinite;
+}
+
+@keyframes danger-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(231,76,60,0.7);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(231,76,60,0);
+    filter: brightness(1.3);
+  }
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────── */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #30363D;
+  border-radius: 2px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #484F58;
+}
+
+/* ── Map focus mode ─────────────────────────────────────────── */
+.map-focus-mode .leaflet-container {
+  border-radius: 0 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CTC SCENARIO — AIGUILLE / COLLISION STYLES
+   Scénario C : Attaque CTC — Déviation d'aiguille Modbus T0855
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Top alert banner ──────────────────────────────────────── */
+.ctc-top-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 18px;
+  background: linear-gradient(90deg, rgba(200,70,0,0.97), rgba(180,20,0,0.97));
+  color: #fff;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  border-bottom: 2px solid rgba(255,100,50,0.8);
+  animation: ctc-banner-slide 0.35s ease-out;
+  z-index: 9999;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ctc-top-banner-collision {
+  background: linear-gradient(90deg, rgba(220,0,0,0.99), rgba(140,0,0,0.99));
+  animation: ctc-top-collision-flash 0.5s ease-in-out infinite;
+}
+
+.ctc-top-banner-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.ctc-top-banner-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ctc-top-banner-mitre {
+  font-size: 10px;
+  opacity: 0.65;
+  font-weight: 600;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+@keyframes ctc-banner-slide {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes ctc-top-collision-flash {
+  0%, 100% { background: linear-gradient(90deg, rgba(220,0,0,0.99), rgba(140,0,0,0.99)); }
+  50%       { background: linear-gradient(90deg, rgba(255,50,50,1),   rgba(200,0,0,1)); }
+}
+
+/* ── Switch marker ─────────────────────────────────────────── */
+.ctc-switch-marker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 0;
+  height: 0;
+}
+
+.ctc-switch-ring {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid;
+  top: -9px;
+  left: -9px;
+  pointer-events: none;
+}
+
+.ctc-switch-deviated .ctc-switch-ring {
+  animation: ctc-switch-ring-pulse 0.8s ease-in-out infinite;
+}
+
+.ctc-switch-nominal .ctc-switch-ring {
+  animation: ctc-switch-ring-idle 2.5s ease-in-out infinite;
+}
+
+.ctc-switch-core {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  top: -6px;
+  left: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 900;
+  color: #fff;
+  z-index: 1;
+}
+
+.ctc-switch-deviated .ctc-switch-core {
+  animation: ctc-core-flash 0.6s ease-in-out infinite;
+}
+
+@keyframes ctc-switch-ring-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.5); opacity: 0.4; }
+}
+
+@keyframes ctc-switch-ring-idle {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+@keyframes ctc-core-flash {
+  0%, 100% { filter: brightness(1); }
+  50%       { filter: brightness(2); }
+}
+
+/* ── Risk level banner (Leaflet control) ───────────────────── */
+.ctc-banner-control {
+  pointer-events: none;
+}
+
+.ctc-banner {
+  font-family: 'IBM Plex Mono', monospace;
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.6), 0 0 20px rgba(255,80,0,0.3);
+  min-width: 230px;
+  border: 1px solid rgba(255,150,50,0.4);
+  animation: ctc-banner-fade-in 0.4s ease-out;
+  pointer-events: none;
+}
+
+.ctc-banner-collision {
+  border-color: rgba(255,30,30,0.9);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.6), 0 0 30px rgba(255,0,0,0.5);
+  animation: ctc-banner-collision-pulse 0.5s ease-in-out infinite;
+}
+
+.ctc-banner-title {
+  font-size: 12px;
+  font-weight: 900;
+  margin-bottom: 8px;
+  letter-spacing: 0.05em;
+}
+
+.ctc-banner-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  margin-bottom: 3px;
+  gap: 12px;
+}
+
+.ctc-banner-key {
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.ctc-banner-val {
+  font-weight: 800;
+  color: #ffdd88;
+}
+
+.ctc-risk-bar-bg {
+  margin-top: 7px;
+  height: 5px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.ctc-risk-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+  max-width: 140px;
+}
+
+.ctc-banner-mitre {
+  margin-top: 7px;
+  font-size: 9px;
+  opacity: 0.5;
+  letter-spacing: 0.04em;
+}
+
+.ctc-blink {
+  animation: ctc-blink-anim 0.4s ease-in-out infinite;
+}
+
+@keyframes ctc-blink-anim {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+@keyframes ctc-banner-fade-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ctc-banner-collision-pulse {
+  0%, 100% { box-shadow: 0 4px 24px rgba(0,0,0,0.6), 0 0 30px rgba(255,0,0,0.5); }
+  50%       { box-shadow: 0 4px 24px rgba(0,0,0,0.6), 0 0 50px rgba(255,0,0,0.9); }
+}
+
+/* ── Collision shockwave (map marker) ──────────────────────── */
+.ctc-shockwave {
+  position: absolute;
+  border-radius: 50%;
+  border: 4px solid #FF1A1A;
+  animation: ctc-shockwave-expand 1.4s ease-out infinite;
+}
+
+.ctc-shockwave.sw-1 { width: 60px; height: 60px; top: -30px; left: -30px; animation-delay: 0s; }
+.ctc-shockwave.sw-2 { width: 60px; height: 60px; top: -30px; left: -30px; animation-delay: 0.35s; }
+.ctc-shockwave.sw-3 { width: 60px; height: 60px; top: -30px; left: -30px; animation-delay: 0.70s; }
+
+.ctc-explosion-core {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #FFEE55, #FF4400);
+  top: -8px;
+  left: -8px;
+  box-shadow: 0 0 20px #FF4400, 0 0 40px rgba(255,68,0,0.6);
+  animation: ctc-core-explode 0.5s ease-in-out infinite;
+}
+
+@keyframes ctc-shockwave-expand {
+  0%   { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(4);   opacity: 0; }
+}
+
+@keyframes ctc-core-explode {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 20px #FF4400, 0 0 40px rgba(255,68,0,0.6); }
+  50%       { transform: scale(1.6); box-shadow: 0 0 35px #FF8800, 0 0 70px rgba(255,136,0,0.8); }
+}
+
+/* ── Full-screen explosion overlay ─────────────────────────── */
+.ctc-explosion-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.ctc-explosion-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 60%, rgba(255,200,50,0.6), rgba(255,50,0,0.4), transparent 70%);
+}
+
+.ctc-explosion-flash {
+  animation: none;
+}
+
+.ctc-explosion-flash { animation: ctc-screen-flash 0.6s ease-out forwards; }
+
+@keyframes ctc-screen-flash {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  40%  { opacity: 0.8; background: radial-gradient(circle at 50% 60%, rgba(255,255,200,0.9), rgba(255,100,0,0.7), transparent 70%); }
+  100% { opacity: 0; }
+}
+
+.ctc-explosion-rings {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ctc-exp-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 6px solid;
+  animation: ctc-exp-ring-burst 1.6s ease-out forwards;
+}
+
+.ctc-exp-ring.r1 { border-color: rgba(255,220,50,0.9);  animation-delay: 0s; }
+.ctc-exp-ring.r2 { border-color: rgba(255,120,20,0.75); animation-delay: 0.15s; }
+.ctc-exp-ring.r3 { border-color: rgba(255,50,0,0.55);   animation-delay: 0.30s; }
+.ctc-exp-ring.r4 { border-color: rgba(200,0,0,0.35);    animation-delay: 0.50s; }
+
+@keyframes ctc-exp-ring-burst {
+  0%   { width: 20px; height: 20px; opacity: 1; }
+  100% { width: 120vw; height: 120vw; opacity: 0; }
+}
+
+.ctc-explosion-text {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  font-family: 'IBM Plex Mono', monospace;
+  color: #fff;
+  animation: ctc-text-appear 0.4s ease-out 0.3s both;
+  text-shadow: 0 0 30px rgba(255,100,0,0.9), 0 2px 8px rgba(0,0,0,0.8);
+}
+
+.ctc-explosion-title {
+  font-size: clamp(28px, 6vw, 64px);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #FFEE55;
+  text-shadow: 0 0 40px #FF4400, 0 0 80px rgba(255,68,0,0.7);
+}
+
+.ctc-explosion-sub {
+  font-size: clamp(12px, 2vw, 18px);
+  font-weight: 600;
+  margin-top: 8px;
+  color: rgba(255,220,180,0.9);
+}
+
+.ctc-explosion-code {
+  font-size: clamp(10px, 1.5vw, 13px);
+  margin-top: 10px;
+  color: rgba(255,150,100,0.7);
+  letter-spacing: 0.1em;
+}
+
+@keyframes ctc-text-appear {
+  from { opacity: 0; transform: scale(0.6); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Phase-based visibility */
+.ctc-explosion-flash   { display: block; }
+.ctc-explosion-smoke   .ctc-explosion-flash { opacity: 0.3; }
+.ctc-explosion-fade    .ctc-explosion-flash { opacity: 0; }
+.ctc-explosion-fade    .ctc-explosion-text  { opacity: 0; transition: opacity 1.5s ease; }
+
+/* ══════════════════════════════════════════════════════════════
+   SIV OPTION 2 — MULTI-QUAI CRISIS STYLES
+   Scénario SIV2 : Blackout information voyageurs + Panique quai
+   T0832 · T0826 · T0831 · T0855
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Passenger board crisis states ─────────────────────────── */
+.ter-passenger-board-crisis {
+  border-color: rgba(245, 166, 35, 0.95) !important;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.60), 0 0 32px rgba(245,166,35,0.35) !important;
+  animation: siv-board-crisis-pulse 1.4s ease-in-out infinite;
+}
+
+.ter-passenger-board-evacuation {
+  border-color: rgba(255, 30, 30, 0.99) !important;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.70), 0 0 50px rgba(255,0,0,0.55) !important;
+  animation: siv-board-evac-pulse 0.55s ease-in-out infinite !important;
+}
+
+@keyframes siv-board-crisis-pulse {
+  0%, 100% { box-shadow: 0 18px 45px rgba(0,0,0,0.60), 0 0 32px rgba(245,166,35,0.35); }
+  50%       { box-shadow: 0 18px 45px rgba(0,0,0,0.60), 0 0 56px rgba(245,166,35,0.65); }
+}
+
+@keyframes siv-board-evac-pulse {
+  0%, 100% { box-shadow: 0 18px 45px rgba(0,0,0,0.70), 0 0 50px rgba(255,0,0,0.55); }
+  50%       { box-shadow: 0 18px 45px rgba(0,0,0,0.70), 0 0 90px rgba(255,0,0,0.95); }
+}
+
+/* Crisis badge (in board header) */
+.siv-crisis-badge {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.28);
+  animation: siv-badge-blink 0.9s ease-in-out infinite;
+}
+
+@keyframes siv-badge-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+/* Faster marquee during crisis */
+.ter-passenger-board-crisis .ter-passenger-marquee span,
+.ter-passenger-board-evacuation .ter-passenger-marquee span {
+  animation-duration: 18s !important;
+}
+
+/* ── SIV crisis top banner ───────────────────────────────────── */
+.siv-crisis-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 18px;
+  color: #fff;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  animation: siv-banner-slide 0.35s ease-out;
+  z-index: 10000;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.siv-banner-niveau1 {
+  background: linear-gradient(90deg, rgba(180,120,0,0.97), rgba(155,90,0,0.97));
+  border-bottom: 2px solid rgba(245,166,35,0.7);
+}
+
+.siv-banner-niveau2 {
+  background: linear-gradient(90deg, rgba(210,70,0,0.97), rgba(185,35,0,0.97));
+  border-bottom: 2px solid rgba(255,80,0,0.8);
+  animation: siv-banner-slide 0.35s ease-out, siv-n2-flash 1.1s ease-in-out infinite;
+}
+
+.siv-banner-niveau3 {
+  background: linear-gradient(90deg, rgba(200,0,0,0.99), rgba(130,0,0,0.99));
+  border-bottom: 2px solid rgba(255,50,50,0.9);
+  animation: siv-banner-slide 0.35s ease-out, siv-n3-flash 0.5s ease-in-out infinite;
+}
+
+.siv-crisis-banner-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.siv-crisis-banner-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.siv-crisis-banner-mitre {
+  font-size: 10px;
+  opacity: 0.65;
+  font-weight: 600;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+@keyframes siv-banner-slide {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes siv-n2-flash {
+  0%, 100% { background: linear-gradient(90deg, rgba(210,70,0,0.97), rgba(185,35,0,0.97)); }
+  50%       { background: linear-gradient(90deg, rgba(240,100,0,1),   rgba(215,55,0,1)); }
+}
+
+@keyframes siv-n3-flash {
+  0%, 100% { background: linear-gradient(90deg, rgba(200,0,0,0.99), rgba(130,0,0,0.99)); }
+  50%       { background: linear-gradient(90deg, rgba(255,40,40,1),  rgba(180,0,0,1)); }
+}
+
+/* ── Full-screen evacuation overlay ──────────────────────────── */
+.siv-evacuation-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  animation: siv-evac-overlay-fade 6s ease-out forwards;
+}
+
+@keyframes siv-evac-overlay-fade {
+  0%   { opacity: 0; }
+  5%   { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.siv-evac-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 40%, rgba(255,80,0,0.5), rgba(200,0,0,0.35), transparent 70%);
+  animation: siv-evac-screen-flash 0.8s ease-out forwards;
+}
+
+@keyframes siv-evac-screen-flash {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  60%  { opacity: 0.7; }
+  100% { opacity: 0.4; }
+}
+
+.siv-evac-rings {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.siv-evac-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 5px solid;
+  animation: siv-evac-ring-burst 2.2s ease-out forwards;
+}
+
+.siv-evac-ring.r1 { border-color: rgba(255,80,0,0.85);  animation-delay: 0s; }
+.siv-evac-ring.r2 { border-color: rgba(255,30,30,0.65); animation-delay: 0.25s; }
+.siv-evac-ring.r3 { border-color: rgba(200,0,0,0.45);   animation-delay: 0.55s; }
+
+@keyframes siv-evac-ring-burst {
+  0%   { width: 20px; height: 20px; opacity: 1; }
+  100% { width: 100vw; height: 100vw; opacity: 0; }
+}
+
+.siv-evac-text {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  font-family: 'IBM Plex Mono', monospace;
+  color: #fff;
+  animation: siv-evac-text-appear 0.5s ease-out 0.2s both;
+  text-shadow: 0 0 30px rgba(255,80,0,0.9), 0 2px 8px rgba(0,0,0,0.8);
+}
+
+.siv-evac-title {
+  font-size: clamp(24px, 5vw, 56px);
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  color: #FF4444;
+  text-shadow: 0 0 40px rgba(255,0,0,0.8), 0 0 80px rgba(255,0,0,0.5);
+  animation: siv-evac-title-flash 0.6s ease-in-out infinite;
+}
+
+.siv-evac-sub {
+  font-size: clamp(14px, 2.5vw, 24px);
+  font-weight: 700;
+  margin-top: 10px;
+  color: rgba(255,200,180,0.95);
+  letter-spacing: 0.05em;
+}
+
+.siv-evac-code {
+  font-size: clamp(9px, 1.2vw, 12px);
+  margin-top: 12px;
+  color: rgba(255,140,100,0.65);
+  letter-spacing: 0.1em;
+}
+
+@keyframes siv-evac-text-appear {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes siv-evac-title-flash {
+  0%, 100% { color: #FF4444; }
+  50%       { color: #FFB000; }
+}
+
+/* ── Offline banner ────────────────────────────────────────── */
+.ter-offline-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--map-overlay-bg);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  padding: 20px 28px;
+  text-align: center;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+/* ── Utility: no transition for Leaflet internal use ─────── */
+.leaflet-fade-anim .leaflet-popup {
+  transition: opacity 0.2s ease !important;
+}

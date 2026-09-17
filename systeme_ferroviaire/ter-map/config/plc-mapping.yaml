@@ -1,0 +1,351 @@
+# ============================================================
+# TER MAP — PLC Mapping Configuration
+# Modbus TCP register → business field mapping
+# ============================================================
+# Référence: railway1.st (OpenPLC, offset %MW=HR1024, %IW=IR0, %IX=DI(byte*8+bit))
+
+plcs:
+  station_b:
+    id: station_b
+    label: "Station B — Sous-station électrique"
+    host: ${PLC_B_HOST}
+    port: ${PLC_B_PORT}
+    unit_id: ${PLC_B_UNIT_ID}
+    description: >
+      PLC OpenPLC gérant la station B: deux transformateurs TX1/TX2,
+      deux feeders, et le couplage énergie↔trains DKR et DMD.
+
+trains:
+  DKR:
+    id: DKR
+    label: "Train DKR — Dakar"
+    direction: "Dakar → Diamniadio"
+    color: "#2EC5A4"       # teal — sens aller
+    plc: station_b
+
+    # ── Input Registers FC04 (%IW = IR addr) ──────────────
+    registers:
+      id_gare:
+        fc: 4
+        addr: 30            # %IW30 — DKR_MET_ID_GARE
+        scale: 1
+        unit: ""
+        field: id_gare
+
+      vitesse:
+        fc: 4
+        addr: 31            # %IW31 — DKR_MET_VITESSE_TRAIN
+        scale: 1
+        unit: "km/h"
+        field: vitesse_kmh
+        min: 0
+        max: 160
+
+      position:
+        fc: 4
+        addr: 32            # %IW32 — DKR_MET_POSITION_TRAIN
+        scale: 1
+        unit: "plc_units"
+        field: progression_plc
+        min: 120
+        max: 1960
+
+      tension_catenaire:
+        fc: 4
+        addr: 33            # %IW33 — DKR_MET_TENSION_CATENAIRE
+        scale: 0.001        # V → kV
+        unit: "kV"
+        field: tension_kv
+
+      courant_traction:
+        fc: 4
+        addr: 34            # %IW34 — DKR_MET_COURANT_TRACTION
+        scale: 1
+        unit: "A"
+        field: courant_a
+        min: 0
+        max: 1200
+
+      temp_transfo:
+        fc: 4
+        addr: 35            # %IW35 — DKR_MET_TEMP_TRANSFO
+        scale: 1
+        unit: "°C"
+        field: temp_transfo_c
+        min: 0
+        max: 150
+
+      niveau_incident:
+        fc: 4
+        addr: 36            # %IW36 — DKR_MET_NIVEAU_INCIDENT (0/2/3)
+        scale: 1
+        unit: ""
+        field: niveau_incident
+
+      nombre_alarmes:
+        fc: 4
+        addr: 37            # %IW37 — DKR_MET_NOMBRE_ALARMES
+        scale: 1
+        unit: ""
+        field: nombre_alarmes
+
+    # ── Discrete Inputs FC02 (%IX byte*8+bit) ─────────────
+    bits:
+      etat_plc_ok:
+        fc: 2
+        addr: 11            # %IX1.3 — DKR_ETAT_PLC_OK
+        field: etat_plc_ok
+
+      etat_gare_ok:
+        fc: 2
+        addr: 12            # %IX1.4 — DKR_ETAT_GARE_OK
+        field: etat_gare_ok
+
+      train_en_marche:
+        fc: 2
+        addr: 14            # %IX1.6 — DKR_ETAT_TRAIN_EN_MARCHE
+        field: train_en_marche
+
+      signal_vert:
+        fc: 2
+        addr: 15            # %IX1.7 — DKR_ETAT_SIGNAL_VERT
+        field: signal_vert
+
+      signal_rouge:
+        fc: 2
+        addr: 16            # %IX2.0 — DKR_ETAT_SIGNAL_ROUGE
+        field: signal_rouge
+
+      catenaire_ok:
+        fc: 2
+        addr: 20            # %IX2.4 — DKR_ETAT_CATENAIRE_OK
+        field: catenaire_ok
+
+      mode_degrade:
+        fc: 2
+        addr: 26            # %IX3.2 — DKR_ETAT_MODE_DEGRADE
+        field: mode_degrade
+
+      alm_critique:
+        fc: 2
+        addr: 28            # %IX3.4 — DKR_ALM_CRITIQUE
+        field: alm_critique
+
+      alm_tension_basse:
+        fc: 2
+        addr: 29            # %IX3.5 — DKR_ALM_TENSION_BASSE
+        field: alm_tension_basse
+
+      alm_surcharge:
+        fc: 2
+        addr: 30            # %IX3.6 — DKR_ALM_SURCHARGE_TRACTION
+        field: alm_surcharge
+
+      alm_transfo_chaud:
+        fc: 2
+        addr: 31            # %IX3.7 — DKR_ALM_TRANSFO_CHAUD
+        field: alm_transfo_chaud
+
+      alm_commande_anormale:
+        fc: 2
+        addr: 37            # %IX4.5 — DKR_ALM_COMMANDE_ANORMALE
+        field: alm_commande_anormale
+
+  DMD:
+    id: DMD
+    label: "Train DMD — Diamniadio"
+    direction: "Diamniadio → Dakar"
+    color: "#F5A623"       # amber — sens retour
+    plc: station_b
+
+    registers:
+      id_gare:
+        fc: 4
+        addr: 40            # %IW40 — DMD_MET_ID_GARE
+        scale: 1
+        unit: ""
+        field: id_gare
+
+      vitesse:
+        fc: 4
+        addr: 41            # %IW41 — DMD_MET_VITESSE_TRAIN
+        scale: 1
+        unit: "km/h"
+        field: vitesse_kmh
+        min: 0
+        max: 160
+
+      position:
+        fc: 4
+        addr: 42            # %IW42 — DMD_MET_POSITION_TRAIN
+        scale: 1
+        unit: "plc_units"
+        field: progression_plc
+        min: 120
+        max: 1960
+
+      tension_catenaire:
+        fc: 4
+        addr: 43            # %IW43 — DMD_MET_TENSION_CATENAIRE
+        scale: 0.001
+        unit: "kV"
+        field: tension_kv
+
+      courant_traction:
+        fc: 4
+        addr: 44            # %IW44 — DMD_MET_COURANT_TRACTION
+        scale: 1
+        unit: "A"
+        field: courant_a
+        min: 0
+        max: 1200
+
+      temp_transfo:
+        fc: 4
+        addr: 45            # %IW45 — DMD_MET_TEMP_TRANSFO
+        scale: 1
+        unit: "°C"
+        field: temp_transfo_c
+        min: 0
+        max: 150
+
+      niveau_incident:
+        fc: 4
+        addr: 46            # %IW46 — DMD_MET_NIVEAU_INCIDENT
+        scale: 1
+        unit: ""
+        field: niveau_incident
+
+      nombre_alarmes:
+        fc: 4
+        addr: 47            # %IW47 — DMD_MET_NOMBRE_ALARMES
+        scale: 1
+        unit: ""
+        field: nombre_alarmes
+
+    bits:
+      etat_plc_ok:
+        fc: 2
+        addr: 39            # %IX4.7 — DMD_ETAT_PLC_OK
+        field: etat_plc_ok
+
+      etat_gare_ok:
+        fc: 2
+        addr: 40            # %IX5.0 — DMD_ETAT_GARE_OK
+        field: etat_gare_ok
+
+      train_en_marche:
+        fc: 2
+        addr: 42            # %IX5.2 — DMD_ETAT_TRAIN_EN_MARCHE
+        field: train_en_marche
+
+      signal_vert:
+        fc: 2
+        addr: 43            # %IX5.3 — DMD_ETAT_SIGNAL_VERT
+        field: signal_vert
+
+      signal_rouge:
+        fc: 2
+        addr: 44            # %IX5.4 — DMD_ETAT_SIGNAL_ROUGE
+        field: signal_rouge
+
+      catenaire_ok:
+        fc: 2
+        addr: 48            # %IX6.0 — DMD_ETAT_CATENAIRE_OK
+        field: catenaire_ok
+
+      mode_degrade:
+        fc: 2
+        addr: 54            # %IX6.6 — DMD_ETAT_MODE_DEGRADE
+        field: mode_degrade
+
+      alm_critique:
+        fc: 2
+        addr: 56            # %IX7.0 — DMD_ALM_CRITIQUE
+        field: alm_critique
+
+      alm_tension_basse:
+        fc: 2
+        addr: 57            # %IX7.1 — DMD_ALM_TENSION_BASSE
+        field: alm_tension_basse
+
+      alm_surcharge:
+        fc: 2
+        addr: 58            # %IX7.2 — DMD_ALM_SURCHARGE_TRACTION
+        field: alm_surcharge
+
+      alm_transfo_chaud:
+        fc: 2
+        addr: 59            # %IX7.3 — DMD_ALM_TRANSFO_CHAUD
+        field: alm_transfo_chaud
+
+      alm_commande_anormale:
+        fc: 2
+        addr: 65            # %IX8.1 — DMD_ALM_COMMANDE_ANORMALE
+        field: alm_commande_anormale
+
+# ── Énergie station B ──────────────────────────────────────
+energy:
+  plc: station_b
+  registers:
+    tx1_oil_temp:
+      fc: 4
+      addr: 5             # %IW5 — MET_TX1_OilTemp
+      scale: 1
+      unit: "°C"
+      field: tx1_oil_temp_c
+
+    tx1_winding_temp:
+      fc: 4
+      addr: 6             # %IW6 — MET_TX1_WindingTemp
+      scale: 1
+      unit: "°C"
+      field: tx1_winding_temp_c
+
+    tx2_oil_temp:
+      fc: 4
+      addr: 7             # %IW7 — MET_TX2_OilTemp
+      scale: 1
+      unit: "°C"
+      field: tx2_oil_temp_c
+
+    tx2_winding_temp:
+      fc: 4
+      addr: 8             # %IW8 — MET_TX2_WindingTemp
+      scale: 1
+      unit: "°C"
+      field: tx2_winding_temp_c
+
+    tx2_output_voltage:
+      fc: 4
+      addr: 10            # %IW10 — MET_TX2_Output_Voltage
+      scale: 1
+      unit: "kV"
+      field: tx2_output_voltage_kv
+
+  bits:
+    alm_fdr2_surcharge:
+      fc: 2
+      addr: 4             # %IX0.4 — ALM_Fdr2_Surcharge
+      field: alm_fdr2_surcharge
+
+    alm_fdr2_desequilibre:
+      fc: 2
+      addr: 5             # %IX0.5 — ALM_Fdr2_Desequilibre
+      field: alm_fdr2_desequilibre
+
+    alm_tx2_temp_high:
+      fc: 2
+      addr: 9             # %IX1.1 — ALM_TX2_Temp_High
+      field: alm_tx2_temp_high
+
+    alm_tx2_temp_crit:
+      fc: 2
+      addr: 10            # %IX1.2 — ALM_TX2_Temp_Crit
+      field: alm_tx2_temp_crit
+
+# ── Constantes de position PLC ─────────────────────────────
+position_mapping:
+  plc_min: 120      # Position DKR à Dakar (gare de départ)
+  plc_max: 1960     # Position maximale (Diamniadio)
+  line_length_km: 36.0

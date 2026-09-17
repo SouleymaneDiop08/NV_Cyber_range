@@ -1,0 +1,37 @@
+[
+  {
+    "id": "billettique",
+    "name": "Billettique Gare",
+    "url": "http://gare_billettique:8080",
+    "ip": "192.168.40.11",
+    "role": "Vente et validation"
+  },
+  {
+    "id": "siv",
+    "name": "SIV Gare",
+    "url": "http://gare_siv:8080",
+    "ip": "192.168.40.12",
+    "role": "Information voyageurs"
+  },
+  {
+    "id": "sono",
+    "name": "SONO Gare",
+    "url": "http://gare_sono:8080",
+    "ip": "192.168.40.13",
+    "role": "Annonces voyageurs"
+  },
+  {
+    "id": "pipc",
+    "name": "PIPC",
+    "url": "http://gare_pipc:8080",
+    "ip": "192.168.40.14",
+    "role": "Interface CTC et signalisation"
+  },
+  {
+    "id": "cctv",
+    "name": "CCTV / VMS Gare",
+    "url": "http://gare_cctv:8080",
+    "ip": "192.168.40.15",
+    "role": "Vidéosurveillance"
+  }
+]
