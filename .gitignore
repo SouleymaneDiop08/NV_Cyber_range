@@ -56,3 +56,6 @@ dispatching/viewer3d-station-b/frontend/static/assets/extracted/electrical_subst
 
 # Secrets générés par scripts/init-plateforme.sh
 .secrets-generes
+
+# Archive source du package ferroviaire (redondante avec systeme_ferroviaire/)
+digital-twin-ferroviaire.zip
