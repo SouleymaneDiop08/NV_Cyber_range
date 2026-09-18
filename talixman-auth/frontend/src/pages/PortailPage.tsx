@@ -15,13 +15,13 @@ const LAB_STATUS_MESSAGES: Record<string, string> = {
 };
 
 const CATEGORY_META: Record<ServiceCategory, { icon: LucideIcon; color: string; label: string }> = {
-  WORKSTATION: { icon: Monitor, color: '#6b7fd7', label: 'Workstation' },
-  ATTACKER: { icon: Skull, color: '#e05252', label: 'Attacker' },
-  SUPERVISION: { icon: Gauge, color: '#3aa8a0', label: 'Supervision' },
-  AUTOMATE: { icon: Bot, color: '#e8792a', label: 'Automate' },
-  TERRAIN: { icon: Factory, color: '#a45a8a', label: 'Terrain' },
+  WORKSTATION: { icon: Monitor, color: 'var(--cat-workstation)', label: 'Workstation' },
+  ATTACKER: { icon: Skull, color: 'var(--cat-attacker)', label: 'Attacker' },
+  SUPERVISION: { icon: Gauge, color: 'var(--cat-supervision)', label: 'Supervision' },
+  AUTOMATE: { icon: Bot, color: 'var(--cat-automate)', label: 'Automate' },
+  TERRAIN: { icon: Factory, color: 'var(--cat-terrain)', label: 'Terrain' },
 };
-const DEFAULT_META = { icon: LayoutGrid, color: '#8892a0', label: 'Service' };
+const DEFAULT_META = { icon: LayoutGrid, color: 'var(--cat-default)', label: 'Service' };
 
 function launch(service: Service) {
   // Passe toujours par le backend : pour un service SSO (ssoTarget renseigné) il orchestre le

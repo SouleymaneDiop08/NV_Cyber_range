@@ -23,7 +23,7 @@ function variantStyle(variant: Variant): { className: string; style?: React.CSSP
     case 'primary':
       return {
         className: 'text-white shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-px active:translate-y-0',
-        style: { background: 'linear-gradient(135deg,#EB640A,#BF2D31)' },
+        style: { background: 'var(--gradient-brand)' },
       };
     case 'danger':
       return {

@@ -8,11 +8,19 @@ import { useAuth } from '../lib/auth-context';
 
 type Step = 'password' | 'otp';
 
+/**
+ * Panneau de marque de la page de connexion.
+ *
+ * Ses couleurs sont volontairement écrites en dur plutôt que prises aux jetons
+ * de thème : ce panneau reste sombre quel que soit le thème choisi (son texte
+ * est en blanc fixe). Les valeurs proviennent de la charte — Sunburn Black en
+ * fond, halos Solar Terracotta et Cyber Teal.
+ */
 function BrandPanel() {
   return (
     <div
       className="relative hidden flex-col justify-center overflow-hidden px-12 py-16 text-white md:flex"
-      style={{ background: 'linear-gradient(150deg,#2c0f1e 0%,#572438 45%,#7a3248 100%)' }}
+      style={{ background: 'linear-gradient(150deg,#0d0402 0%,#150d0a 45%,#1a1413 100%)' }}
     >
       <div
         className="pointer-events-none absolute inset-0 opacity-60"
@@ -21,18 +29,18 @@ function BrandPanel() {
           backgroundSize: '28px 28px',
         }}
       />
-      <div className="pointer-events-none absolute -right-[100px] -top-[120px] h-[360px] w-[360px] rounded-full bg-[#EB640A] opacity-35 blur-[50px]" />
-      <div className="pointer-events-none absolute -bottom-[100px] -left-[80px] h-[300px] w-[300px] rounded-full bg-[#BF2D31] opacity-30 blur-[50px]" />
+      <div className="pointer-events-none absolute -right-[100px] -top-[120px] h-[360px] w-[360px] rounded-full bg-[#d76f50] opacity-30 blur-[50px]" />
+      <div className="pointer-events-none absolute -bottom-[100px] -left-[80px] h-[300px] w-[300px] rounded-full bg-[#528a96] opacity-25 blur-[50px]" />
       <div className="animate-fade-in relative z-10 max-w-[440px]">
         <div className="mb-10 w-fit rounded-[10px] bg-white px-5 py-3.5">
           <img src={logo} alt="Talixman" className="block h-9" />
         </div>
-        <p className="mb-3.5 font-mono text-xs font-bold uppercase tracking-[0.12em] text-[#ffb98a]">
+        <p className="mb-3.5 font-mono text-xs font-bold uppercase tracking-[0.12em] text-[#e58467]">
           Cyber Range Industriel
         </p>
         <h1 className="mb-[18px] text-[42px] font-extrabold leading-[1.1] tracking-[-0.01em]">
           Entraînez vos équipes face aux{' '}
-          <span className="bg-gradient-to-r from-[#ff9c52] to-[#ff6f61] bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-[#e58467] to-[#528a96] bg-clip-text text-transparent">
             cybermenaces réelles
           </span>
         </h1>

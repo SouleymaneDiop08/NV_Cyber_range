@@ -93,7 +93,7 @@ export default function DashboardLayout() {
                 }
                 style={({ isActive }) => ({
                   color: isActive ? '#fff' : 'var(--text-dim)',
-                  background: isActive ? 'linear-gradient(135deg,#EB640A,#BF2D31)' : 'transparent',
+                  background: isActive ? 'var(--gradient-brand)' : 'transparent',
                 })}
               >
                 {item.label}
@@ -116,7 +116,7 @@ export default function DashboardLayout() {
               className="flex items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3.5"
               style={{ borderColor: 'var(--border-strong)', background: 'var(--panel2)' }}
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg,#EB640A,#BF2D31)' }}>
+              <div className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: 'var(--gradient-brand)' }}>
                 {avatarInitial}
               </div>
               <div className="leading-tight">
@@ -168,7 +168,7 @@ export default function DashboardLayout() {
                   }
                   style={({ isActive }) => ({
                     color: isActive ? '#fff' : 'var(--text)',
-                    background: isActive ? 'linear-gradient(135deg,#EB640A,#BF2D31)' : 'transparent',
+                    background: isActive ? 'var(--gradient-brand)' : 'transparent',
                   })}
                 >
                   {item.label}
@@ -177,7 +177,7 @@ export default function DashboardLayout() {
             </nav>
 
             <div className="mb-4 flex items-center gap-2 rounded-lg border p-3" style={{ borderColor: 'var(--border-strong)', background: 'var(--panel2)' }}>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg,#EB640A,#BF2D31)' }}>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: 'var(--gradient-brand)' }}>
                 {avatarInitial}
               </div>
               <div className="leading-tight">

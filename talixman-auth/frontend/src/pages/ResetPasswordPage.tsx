@@ -181,7 +181,7 @@ export default function ResetPasswordPage() {
             <Link
               to="/login"
               className="block w-full rounded-[var(--radius-md)] py-[15px] text-center text-[14.5px] font-bold tracking-wide text-white transition-transform duration-[var(--dur-fast)] hover:-translate-y-px"
-              style={{ background: 'linear-gradient(135deg,#EB640A,#BF2D31)' }}
+              style={{ background: 'var(--gradient-brand)' }}
             >
               Aller à la connexion
             </Link>

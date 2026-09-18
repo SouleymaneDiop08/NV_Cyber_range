@@ -743,7 +743,7 @@ export default function GestionPage() {
               className="flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-[11.5px] font-bold uppercase tracking-wide transition-colors duration-[var(--dur-fast)]"
               style={{
                 borderColor: active ? 'transparent' : 'var(--border-strong)',
-                background: active ? 'linear-gradient(135deg,#EB640A,#BF2D31)' : 'var(--panel2)',
+                background: active ? 'var(--gradient-brand)' : 'var(--panel2)',
                 color: active ? '#fff' : 'var(--text-dim)',
               }}
             >

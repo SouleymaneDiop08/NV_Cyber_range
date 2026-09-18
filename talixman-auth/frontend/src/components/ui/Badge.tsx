@@ -8,7 +8,7 @@ const TONE_STYLE: Record<Tone, React.CSSProperties> = {
   warning: { color: 'var(--warning)', background: 'var(--warning-bg)', borderColor: 'transparent' },
   danger: { color: 'var(--red)', background: 'var(--danger-bg)', borderColor: 'transparent' },
   info: { color: 'var(--info)', background: 'color-mix(in srgb, var(--info) 14%, transparent)', borderColor: 'transparent' },
-  brand: { color: '#fff', background: 'linear-gradient(135deg,#EB640A,#BF2D31)', borderColor: 'transparent' },
+  brand: { color: '#fff', background: 'var(--gradient-brand)', borderColor: 'transparent' },
 };
 
 export function Badge({

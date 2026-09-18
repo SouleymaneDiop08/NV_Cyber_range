@@ -2,88 +2,114 @@
 
 :root,
 [data-theme="dark"] {
-  --bg: #150d11;
-  --panel: #1e1216;
-  --panel2: #28151a;
-  --panel3: #331a20;
-  --border: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(255, 255, 255, 0.18);
-  --text: #f5eee9;
-  --text-dim: #b3999f;
-  --text-faint: #7d6870;
-  --orange: #eb640a;
-  --orange-strong: #ff7a1f;
-  --red: #ff6169;
-  --plum: #572438;
+  --bg: #0d0402;
+  --panel: #110a07;
+  --panel2: #17100d;
+  --panel3: #1f1815;
+  --border: #1a1413;
+  --border-strong: #2c2523;
+  --text: #f9f9fa;
+  --text-dim: #a9a2a0;
+  --text-faint: #766d6a;
+  --orange: #d76f50;
+  --orange-strong: #e58467;
+  --red: #ff3b6b;
+  --plum: #528a96;
   --success: #3ecf8e;
   --success-bg: rgba(62, 207, 142, 0.14);
-  --warning: #f0a93c;
-  --warning-bg: rgba(240, 169, 60, 0.14);
-  --danger-bg: rgba(225, 68, 72, 0.14);
-  --info: #5aa9e6;
-  --focus-ring: #ff9c52;
+  --warning: #f5c542;
+  --warning-bg: rgba(245, 197, 66, 0.14);
+  --danger-bg: rgba(255, 59, 107, 0.14);
+  --info: #528a96;
+  --focus-ring: #e58467;
+  /* Dégradé de marque — Solar Terracotta vers sa version brûlée. Déclaré ici
+     pour n'exister qu'à un seul endroit : il était auparavant recopié en dur
+     dans neuf composants. */
+  --gradient-brand: linear-gradient(135deg, #d76f50, #a8452a);
+  /* Couleurs des catégories de services. Déclinées par thème : une teinte
+     lisible sur Sunburn Black devient illisible sur Signal Light. */
+  --cat-workstation: #7fa9b2;
+  --cat-attacker: #ff3b6b;
+  --cat-supervision: #528a96;
+  --cat-automate: #d76f50;
+  --cat-terrain: #e5a184;
+  --cat-default: #a9a2a0;
   --shadow-color: 0deg 0% 0%;
   --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.4);
   --shadow-md: 0 6px 16px -4px hsl(var(--shadow-color) / 0.45), 0 2px 6px -2px hsl(var(--shadow-color) / 0.35);
   --shadow-lg: 0 20px 40px -12px hsl(var(--shadow-color) / 0.55);
-  --overlay: rgba(10, 5, 7, 0.6);
+  --overlay: rgba(6, 2, 1, 0.66);
 }
 
 [data-theme="light"] {
-  --bg: #f7f3f1;
+  --bg: #f9f9fa;
   --panel: #ffffff;
-  --panel2: #f2e9e5;
-  --panel3: #ece0db;
-  --border: rgba(45, 20, 30, 0.1);
-  --border-strong: rgba(45, 20, 30, 0.18);
-  --text: #241119;
-  --text-dim: #6b555f;
-  --text-faint: #8f7a83;
-  --orange: #d9691f;
-  --orange-strong: #c85a17;
-  --red: #c22a2e;
-  --plum: #572438;
-  --success: #1f9d68;
-  --success-bg: rgba(31, 157, 104, 0.12);
-  --warning: #b5760f;
-  --warning-bg: rgba(181, 118, 15, 0.12);
-  --danger-bg: rgba(194, 42, 46, 0.1);
-  --info: #2570b0;
-  --focus-ring: #c85a17;
+  --panel2: #f1f1f3;
+  --panel3: #e7e7ea;
+  --border: rgba(13, 4, 2, 0.10);
+  --border-strong: rgba(13, 4, 2, 0.18);
+  --text: #0d0402;
+  --text-dim: #5a5250;
+  --text-faint: #6e6562;
+  --orange: #b85535;
+  --orange-strong: #9e4529;
+  --red: #d1204d;
+  --plum: #3d6b76;
+  --success: #158055;
+  --success-bg: rgba(21, 128, 85, 0.12);
+  --warning: #856208;
+  --warning-bg: rgba(133, 98, 8, 0.12);
+  --danger-bg: rgba(209, 32, 77, 0.10);
+  --info: #3d6b76;
+  --focus-ring: #9e4529;
+  --gradient-brand: linear-gradient(135deg, #b85535, #8f3a20);
+  --cat-workstation: #4a7d88;
+  --cat-attacker: #d1204d;
+  --cat-supervision: #2f5d68;
+  --cat-automate: #b85535;
+  --cat-terrain: #a05a3c;
+  --cat-default: #6e6562;
   --shadow-color: 20deg 30% 20%;
   --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.08);
   --shadow-md: 0 6px 16px -4px hsl(var(--shadow-color) / 0.14), 0 2px 6px -2px hsl(var(--shadow-color) / 0.1);
   --shadow-lg: 0 20px 40px -12px hsl(var(--shadow-color) / 0.22);
-  --overlay: rgba(40, 20, 26, 0.4);
+  --overlay: rgba(13, 4, 2, 0.42);
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --bg: #f7f3f1;
+    --bg: #f9f9fa;
     --panel: #ffffff;
-    --panel2: #f2e9e5;
-    --panel3: #ece0db;
-    --border: rgba(45, 20, 30, 0.1);
-    --border-strong: rgba(45, 20, 30, 0.18);
-    --text: #241119;
-    --text-dim: #6b555f;
-    --text-faint: #8f7a83;
-    --orange: #d9691f;
-    --orange-strong: #c85a17;
-    --red: #c22a2e;
-    --plum: #572438;
-    --success: #1f9d68;
-    --success-bg: rgba(31, 157, 104, 0.12);
-    --warning: #b5760f;
-    --warning-bg: rgba(181, 118, 15, 0.12);
-    --danger-bg: rgba(194, 42, 46, 0.1);
-    --info: #2570b0;
-    --focus-ring: #c85a17;
+    --panel2: #f1f1f3;
+    --panel3: #e7e7ea;
+    --border: rgba(13, 4, 2, 0.10);
+    --border-strong: rgba(13, 4, 2, 0.18);
+    --text: #0d0402;
+    --text-dim: #5a5250;
+    --text-faint: #6e6562;
+    --orange: #b85535;
+    --orange-strong: #9e4529;
+    --red: #d1204d;
+    --plum: #3d6b76;
+    --success: #158055;
+    --success-bg: rgba(21, 128, 85, 0.12);
+    --warning: #856208;
+    --warning-bg: rgba(133, 98, 8, 0.12);
+    --danger-bg: rgba(209, 32, 77, 0.10);
+    --info: #3d6b76;
+    --focus-ring: #9e4529;
+  --gradient-brand: linear-gradient(135deg, #b85535, #8f3a20);
+      --cat-workstation: #4a7d88;
+      --cat-attacker: #d1204d;
+      --cat-supervision: #2f5d68;
+      --cat-automate: #b85535;
+      --cat-terrain: #a05a3c;
+      --cat-default: #6e6562;
     --shadow-color: 20deg 30% 20%;
     --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.08);
     --shadow-md: 0 6px 16px -4px hsl(var(--shadow-color) / 0.14), 0 2px 6px -2px hsl(var(--shadow-color) / 0.1);
     --shadow-lg: 0 20px 40px -12px hsl(var(--shadow-color) / 0.22);
-    --overlay: rgba(40, 20, 26, 0.4);
+    --overlay: rgba(13, 4, 2, 0.42);
   }
 }
 
